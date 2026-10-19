@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Nota Ongkir & Manifes Kapal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="top-bar no-print">
+    <div>
+      <h1>LOGISTIK KAPAL</h1>
+      <div class="subtitle">Manifes & Nota Kontan Juragan</div>
+    </div>
+    <div class="status-badge" id="statusBadge">
+      ● Memuat...
+    </div>
+  </header>
+
+  <!-- Search & Filter Bar -->
+  <div class="search-section no-print" id="searchBarWrap">
+    <div class="search-input-wrap">
+      <input type="text" id="searchInput" class="search-input" placeholder="🔍 Cari nama kapal, juragan, parengge..." oninput="filterData()">
+      <button class="btn-action" style="padding: 0.4rem 0.6rem;" onclick="tarikSemuaData()">🔄</button>
+    </div>
+    <div class="filter-pills">
+      <div class="pill active" onclick="setPillFilter('SEMUA', this)">Semua Data</div>
+      <div class="pill" onclick="setPillFilter('HARI_INI', this)">Hari Ini</div>
+      <div class="pill" onclick="setPillFilter('KALMAS', this)">Kalmas (DDC/DDL)</div>
+      <div class="pill" onclick="setPillFilter('PUMA', this)">Puma</div>
+    </div>
+  </div>
+
+  <!-- Content List Area -->
+  <div class="content-area no-print">
+    <!-- TAB 1: DAFTAR SEMUA KAPAL -->
+    <div id="tabKapal">
+      <div id="shipCardList">
+        <div style="text-align:center; padding: 3rem 1rem; color: var(--text-muted); font-size: 0.85rem;">
+          Sedang menghubungkan ke spreadsheet...
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: DATA SEMUA MUATAN / KAPAL PARENGGE -->
+    <div id="tabMuatan" style="display: none;">
+      <h2 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">
+        Seluruh Muatan Kapal Parengge (<span id="countMuatan">0</span> Item)
+      </h2>
+      <div id="allMuatanList"></div>
+    </div>
+
+    <!-- TAB 3: SETTING KONEKSI APPS SCRIPT -->
+    <div id="tabSetting" style="display: none;">
+      <div class="card" style="padding: 1.25rem;">
+        <h2 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">Pengaturan Webhook Google Apps Script</h2>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Tautkan URL Webhook Google Apps Script Anda untuk memuat seluruh riwayat data kapal & muatan.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <label style="font-size: 0.8rem; font-weight: 600;">URL Webhook (GAS):</label>
+          <input type="text" id="webhookInput" class="search-input" placeholder="https://script.google.com/macros/s/.../exec">
+          <button class="btn-action" onclick="simpanWebhook()" style="padding: 0.65rem; margin-top: 0.5rem;">
+            💾 Simpan & Tarik Ulang Database
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOTA KONTAN CETAK (MOBILE POPUP) -->
+  <div class="modal-overlay" id="notaModal">
+    <div class="modal-content">
+      <div class="modal-top-bar no-print">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-weight: 700; font-size: 0.95rem;">Nota Ongkir (A6)</span>
+          <span id="saveIndicator" class="save-status-pill">✓ Tersimpan</span>
+        </div>
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+          <button class="btn-action" onclick="window.print()" style="background: var(--success);">🖨️ Cetak A6</button>
+          <button class="btn-close" onclick="tutupNota()">✕</button>
+        </div>
+      </div>
+
+      <!-- BLANGKO NOTA KONTAN -->
+      <div id="notaPrintArea">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="no-print btn-add-row" style="margin-top: 0.75rem; text-align: center;">
+        <button type="button" class="btn-action" onclick="tambahBarisManual()" style="background: #475569; font-size: 0.78rem; padding: 0.4rem 0.8rem;">
+          ➕ Tambah Baris Kapal Parengge Manual
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav no-print">
+    <div class="nav-item active" onclick="switchTab('kapal', this)">
+      <span class="nav-icon">🚢</span>
+      <span>Semua Kapal</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('muatan', this)">
+      <span class="nav-icon">📦</span>
+      <span>Kapal Parengge</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('setting', this)">
+      <span class="nav-icon">⚙️</span>
+      <span>Pengaturan</span>
+    </div>
+  </nav>
+
+  <!-- Script Modular External -->
+  <script src="app.js"></script>
+</body>
+</html>
