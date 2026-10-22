@@ -663,6 +663,7 @@ function renderDailyChart() {
     return;
   }
 
+  const isMobile = window.innerWidth <= 640;
   const ctx = canvas.getContext("2d");
   const gabusGradient = ctx.createLinearGradient(0, 0, 0, 300);
   gabusGradient.addColorStop(0, 'rgba(12, 35, 64, 0.95)');
@@ -679,9 +680,9 @@ function renderDailyChart() {
           yAxisID: 'yGabus',
           backgroundColor: gabusGradient,
           hoverBackgroundColor: '#2b75b3',
-          borderRadius: 6,
+          borderRadius: isMobile ? 4 : 6,
           borderSkipped: false,
-          maxBarThickness: 42,
+          maxBarThickness: isMobile ? 22 : 42,
           order: 2,
           customShipNames: shipNamesList,
           customFullDates: fullDatesList
@@ -693,14 +694,14 @@ function renderDailyChart() {
           yAxisID: 'yKapal',
           borderColor: '#ea580c',
           backgroundColor: 'rgba(234, 88, 12, 0.1)',
-          borderWidth: 3,
+          borderWidth: isMobile ? 2.2 : 3,
           fill: false,
           tension: 0.35,
           pointBackgroundColor: '#ffffff',
           pointBorderColor: '#ea580c',
-          pointBorderWidth: 2.5,
-          pointRadius: 4.5,
-          pointHoverRadius: 7,
+          pointBorderWidth: isMobile ? 2 : 2.5,
+          pointRadius: isMobile ? 3.5 : 4.5,
+          pointHoverRadius: isMobile ? 5.5 : 7,
           pointHoverBackgroundColor: '#ea580c',
           pointHoverBorderColor: '#ffffff',
           order: 1
@@ -723,18 +724,18 @@ function renderDailyChart() {
           titleColor: '#ffffff',
           titleFont: {
             family: 'Plus Jakarta Sans',
-            size: 13,
+            size: isMobile ? 11 : 13,
             weight: '700'
           },
           bodyColor: '#e2e8f0',
           bodyFont: {
             family: 'Plus Jakarta Sans',
-            size: 12,
+            size: isMobile ? 10 : 12,
             weight: '500'
           },
-          padding: 12,
+          padding: isMobile ? 8 : 12,
           cornerRadius: 8,
-          boxPadding: 6,
+          boxPadding: 4,
           usePointStyle: true,
           callbacks: {
             title: function(items) {
@@ -775,10 +776,12 @@ function renderDailyChart() {
             font: {
               family: 'Plus Jakarta Sans',
               weight: '600',
-              size: 11
+              size: isMobile ? 9 : 11
             },
-            maxRotation: 45,
-            minRotation: 0
+            maxRotation: isMobile ? 35 : 45,
+            minRotation: isMobile ? 35 : 0,
+            autoSkip: true,
+            maxTicksLimit: isMobile ? 7 : 14
           }
         },
         yGabus: {
@@ -786,7 +789,7 @@ function renderDailyChart() {
           position: 'left',
           beginAtZero: true,
           title: {
-            display: true,
+            display: !isMobile,
             text: '📦 Total Gabus',
             color: '#1e40af',
             font: {
@@ -799,9 +802,12 @@ function renderDailyChart() {
             color: '#64748b',
             font: {
               family: 'Plus Jakarta Sans',
-              size: 10
+              size: isMobile ? 9 : 10
             },
             callback: function(val) {
+              if (isMobile && val >= 1000) {
+                return (val / 1000).toFixed(val % 1000 === 0 ? 0 : 1) + 'k';
+              }
               return formatDots(val);
             }
           },
@@ -814,8 +820,8 @@ function renderDailyChart() {
           position: 'right',
           beginAtZero: true,
           title: {
-            display: true,
-            text: '🚢 Kapal Pengangkut',
+            display: !isMobile,
+            text: '🚢 Kapal',
             color: '#ea580c',
             font: {
               family: 'Plus Jakarta Sans',
@@ -830,10 +836,10 @@ function renderDailyChart() {
             font: {
               family: 'Plus Jakarta Sans',
               weight: '600',
-              size: 10
+              size: isMobile ? 9 : 10
             },
             callback: function(val) {
-              return val + ' Kapal';
+              return isMobile ? val : (val + ' Kapal');
             }
           },
           grid: {
@@ -1329,7 +1335,7 @@ function renderBlangkoNota() {
               <input type="text" id="inpPotonganNom" inputmode="numeric" class="inp-potongan no-print" placeholder="0" value="${potonganNominal ? formatDots(potonganNominal) : ''}" oninput="handlePotonganNominalInput(this)">
             </td>
           </tr>
-          <tr style="background:#f4f4f4;">
+          <tr>
             <td class="lbl-calc" style="font-weight:900;">Total Bersih:</td>
             <td class="val-calc val-total" id="txtTotalBersih">0</td>
           </tr>
