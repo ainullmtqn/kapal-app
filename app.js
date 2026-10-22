@@ -1193,79 +1193,91 @@ function hapusBaris(idx) {
 // ==========================================
 function renderBlangkoNota() {
   const printArea = document.getElementById("notaPrintArea");
+  if (!printArea) return;
+  if (!activeKapal) return;
 
-  let tglStr = escapeHtml(activeKapal.tanggal);
   try {
-    const [y, m, d] = activeKapal.tanggal.split("-");
-    tglStr = `${d} - ${m} - ${y}`;
-  } catch (e) {}
+    let rawTgl = activeKapal.tanggal ? String(activeKapal.tanggal) : "";
+    let tglStr = escapeHtml(rawTgl);
+    try {
+      if (rawTgl.includes("-")) {
+        const parts = rawTgl.split("-");
+        if (parts.length === 3) {
+          tglStr = `${parts[2]} - ${parts[1]} - ${parts[0]}`;
+        }
+      }
+    } catch (_) {}
 
-  let resiVal = escapeHtml(activeKapal.resi || "1");
-  const isCompact = notaItems.length > 6;
-  const sheetClass = isCompact ? "nota-sheet compact-sheet" : "nota-sheet";
+    let resiVal = escapeHtml(activeKapal.resi ? String(activeKapal.resi) : "1");
+    const isCompact = Array.isArray(notaItems) && notaItems.length > 6;
+    const sheetClass = isCompact ? "nota-sheet compact-sheet" : "nota-sheet";
 
-  let rowsHtml = "";
-  if (notaItems.length === 0) {
-    rowsHtml = `
-      <tr>
-        <td colspan="4" style="text-align: center; color: var(--danger-text); padding: 8px; font-weight: 600;">
-          ⚠️ Rincian muatan kapal ini belum ada / kosong.<br>
-          <small style="color: var(--text-muted); font-weight: normal;">
-            Klik "+ Tambah Baris Kapal Parengge Manual" di bawah untuk menambahkan.
-          </small>
-        </td>
-      </tr>
-    `;
-  } else {
-    notaItems.forEach((item, idx) => {
-      const safeNama = escapeHtml(item.nama);
-      rowsHtml += `
+    let rowsHtml = "";
+    if (!notaItems || notaItems.length === 0) {
+      rowsHtml = `
         <tr>
-          <td class="cell-no">${idx + 1}</td>
-          <td style="padding-left: 5px;">
-            <span class="print-text text-left" id="txtPrintNama_${idx}">${safeNama}</span>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
-              <input type="text" class="inp-nama no-print" value="${safeNama}" oninput="updateNamaItem(${idx}, this.value)" style="flex: 1;">
-              <button type="button" class="btn-del-item no-print" onclick="hapusBaris(${idx})" title="Hapus Baris">🗑️</button>
-            </div>
-          </td>
-          <td style="text-align: center;">
-            <span class="print-text text-center" id="txtPrintGabus_${idx}">${item.gabus}</span>
-            <input type="number" class="inp-gabus no-print" value="${item.gabus}" oninput="updateGabusItem(${idx}, this.value)">
-          </td>
-          <td style="text-align: right; padding-right: 5px;">
-            <span class="print-text text-right font-bold" id="txtPrintOngkir_${idx}">${item.ongkir ? formatDots(item.ongkir) : ''}</span>
-            <input type="text" inputmode="numeric" class="inp-ongkir no-print" placeholder="0" value="${item.ongkir ? formatDots(item.ongkir) : ''}" oninput="handleOngkirInput(${idx}, this)">
+          <td colspan="4" style="text-align: center; color: var(--danger-text); padding: 8px; font-weight: 600;">
+            ⚠️ Rincian muatan kapal ini belum ada / kosong.<br>
+            <small style="color: var(--text-muted); font-weight: normal;">
+              Klik "+ Tambah Baris Kapal Parengge Manual" di bawah untuk menambahkan.
+            </small>
           </td>
         </tr>
       `;
-    });
-  }
+    } else {
+      notaItems.forEach((item, idx) => {
+        const safeNama = escapeHtml(item ? item.nama : "");
+        const safeGabus = Number(item ? item.gabus : 0) || 0;
+        const safeOngkir = Number(item ? item.ongkir : 0) || 0;
+        rowsHtml += `
+          <tr>
+            <td class="cell-no">${idx + 1}</td>
+            <td style="padding-left: 5px;">
+              <span class="print-text text-left" id="txtPrintNama_${idx}">${safeNama}</span>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+                <input type="text" class="inp-nama no-print" value="${safeNama}" oninput="updateNamaItem(${idx}, this.value)" style="flex: 1;">
+                <button type="button" class="btn-del-item no-print" onclick="hapusBaris(${idx})" title="Hapus Baris">🗑️</button>
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <span class="print-text text-center" id="txtPrintGabus_${idx}">${safeGabus}</span>
+              <input type="number" class="inp-gabus no-print" value="${safeGabus}" oninput="updateGabusItem(${idx}, this.value)">
+            </td>
+            <td style="text-align: right; padding-right: 5px;">
+              <span class="print-text text-right font-bold" id="txtPrintOngkir_${idx}">${safeOngkir ? formatDots(safeOngkir) : ''}</span>
+              <input type="text" inputmode="numeric" class="inp-ongkir no-print" placeholder="0" value="${safeOngkir ? formatDots(safeOngkir) : ''}" oninput="handleOngkirInput(${idx}, this)">
+            </td>
+          </tr>
+        `;
+      });
+    }
 
-  let totalGabusFisik = 0;
-  notaItems.forEach(i => totalGabusFisik += Number(i.gabus) || 0);
+    let totalGabusFisik = 0;
+    if (Array.isArray(notaItems)) {
+      notaItems.forEach(i => totalGabusFisik += Number(i.gabus) || 0);
+    }
 
-  printArea.innerHTML = `
-    <div class="${sheetClass}">
-      <!-- WATERMARK LOGO RESMI DI BELAKANG NOTA -->
-      <div class="nota-watermark" aria-hidden="true">
-        <img src="logo.png" alt="Watermark PARENGGEKITA" class="nota-watermark-img">
-      </div>
-
-      <div class="nota-header-top">
-        <div class="resi-wrap">
-          <span>Res</span>
-          <span class="print-text print-resi-box" id="txtPrintResi">${resiVal}</span>
-          <input type="text" class="resi-input no-print" id="inpResi" value="${resiVal}" oninput="handleResiInput(this.value)">
+    printArea.innerHTML = `
+      <div class="${sheetClass}">
+        <!-- WATERMARK LOGO RESMI DI BELAKANG NOTA -->
+        <div class="nota-watermark" aria-hidden="true">
+          <img src="logo.png" alt="Watermark PARENGGEKITA" class="nota-watermark-img">
         </div>
-        <div class="nota-header-title">
-          <div class="nota-title-brand-row">
-            <img src="logo.png" alt="Logo PARENGGEKITA" class="nota-mini-logo">
-            <span>NOTA ONGKIR</span>
+
+        <div class="nota-header-top">
+          <div class="resi-wrap">
+            <span>Res</span>
+            <span class="print-text print-resi-box" id="txtPrintResi">${resiVal}</span>
+            <input type="text" class="resi-input no-print" id="inpResi" value="${resiVal}" oninput="handleResiInput(this.value)">
           </div>
+          <div class="nota-header-title">
+            <div class="nota-title-brand-row">
+              <img src="logo.png" alt="Logo PARENGGEKITA" class="nota-mini-logo">
+              <span>NOTA ONGKIR</span>
+            </div>
+          </div>
+          <div class="nota-header-date">${tglStr}</div>
         </div>
-        <div class="nota-header-date">${tglStr}</div>
-      </div>
 
       <table class="info-table">
         <tr>
@@ -1336,7 +1348,10 @@ function renderBlangkoNota() {
     </div>
   `;
 
-  hitungNota();
+    hitungNota();
+  } catch (err) {
+    console.error("Gagal render blangko nota:", err);
+  }
 }
 
 // ==========================================
