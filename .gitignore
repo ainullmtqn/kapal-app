@@ -1,0 +1,21 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor Configurations
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary and Scratch Files
+*.tmp
+*.bak
+*.swp
+*.log
+text_crop*.png
+
+# Node / Package Manager Caches
+node_modules/
+.npm/
