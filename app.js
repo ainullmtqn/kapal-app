@@ -12,6 +12,42 @@ let dailyChartInstance = null;
 let currentChartRangeDays = 7;
 
 // ==========================================
+// FITUR KEAMANAN OPERASIONAL & PROTEKSI DATA
+// ==========================================
+let isEditLocked = true;          // Proteksi Layar Sentuh Default: TERKUNCI (Aman)
+let lastSyncTimestamp = 0;        // Anti-Spam Rate Limiter Cooldown
+let isWebhookLocked = true;       // Kunci URL Webhook
+let isWebhookVisible = false;     // Masking Sandi Webhook
+
+// Sanitasi Input Anti-XSS (Script Injection Protection)
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Notifikasi Melayang Khusus Keamanan & Proteksi
+function showSecurityToast(msg) {
+  let toast = document.getElementById("securityToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "securityToast";
+    toast.className = "security-toast";
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `<span style="margin-right: 6px;">🛡️</span><span>${escapeHtml(msg)}</span>`;
+  toast.classList.add("show");
+  if (window._securityToastTimer) clearTimeout(window._securityToastTimer);
+  window._securityToastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3200);
+}
+
+// ==========================================
 // FORMATTER ANGKA & TANGGAL
 // ==========================================
 function formatDots(val) {
@@ -48,9 +84,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const dateEl = document.getElementById("currentDateDisplay");
   if (dateEl) dateEl.textContent = formatTanggalIndo();
 
+  // Inisialisasi Proteksi Webhook
   const savedWebhook = localStorage.getItem("GAS_WEBHOOK_URL") || "";
   const inpWebhook = document.getElementById("webhookInput");
-  if (inpWebhook) inpWebhook.value = savedWebhook;
+  if (inpWebhook) {
+    inpWebhook.value = savedWebhook;
+    inpWebhook.type = "password";
+    inpWebhook.readOnly = true;
+    inpWebhook.classList.add("input-locked");
+  }
 
   // 1. Muat Cache Offline terlebih dahulu (Instant 0ms display)
   try {
@@ -85,7 +127,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 3. Tarik data terbaru dari Google Apps Script
+  // 3. Proteksi Perubahan Belum Disimpan (BeforeUnload Guard)
+  window.addEventListener("beforeunload", (e) => {
+    if (autoSaveTimer !== null) {
+      e.preventDefault();
+      e.returnValue = "Perubahan nota sedang disimpan ke server. Tetap ingin menutup halaman?";
+      return e.returnValue;
+    }
+  });
+
+  // 4. Tarik data terbaru dari Google Apps Script
   if (savedWebhook) {
     tarikSemuaData();
   } else if (allPelayaran.length === 0) {
@@ -114,11 +165,21 @@ function updateStatusBadge(status, text, countText = "") {
 
 // ==========================================
 // KONEKSI WEBHOOK GOOGLE APPS SCRIPT
+// DILENGKAPI ANTI-SPAM RATE LIMITER
 // ==========================================
 async function tarikSemuaData() {
+  // Keamanan Fitur: Anti-Spam Rate Limiter (Cooldown 4 detik)
+  const now = Date.now();
+  if (now - lastSyncTimestamp < 4000) {
+    const sisa = Math.ceil((4000 - (now - lastSyncTimestamp)) / 1000);
+    showSecurityToast(`⏳ Harap tunggu ${sisa} detik sebelum menyegarkan data lagi.`);
+    return;
+  }
+  lastSyncTimestamp = now;
+
   const url = localStorage.getItem("GAS_WEBHOOK_URL");
   if (!url) {
-    alert("Silakan masukkan URL Webhook Apps Script di menu Pengaturan!");
+    showSecurityToast("⚠️ Webhook Apps Script belum diatur!");
     switchTab('setting');
     return;
   }
@@ -153,6 +214,7 @@ async function tarikSemuaData() {
       filterData();
       renderSemuaMuatan();
       renderAuditTab();
+      showSecurityToast(`✓ Data terbaru disinkronkan (${allPelayaran.length} kapal).`);
     } else {
       updateStatusBadge("offline", "Kendala DB");
       alert("Gagal membaca database: " + (data.pesan || "Terjadi kesalahan"));
@@ -161,8 +223,72 @@ async function tarikSemuaData() {
     console.error("Gagal menarik data:", e);
     if (allPelayaran.length > 0) {
       updateStatusBadge("offline", "Offline", " (Cache)");
+      showSecurityToast("⚠️ Gagal terhubung ke server. Menggunakan data cache lokal.");
     } else {
       updateStatusBadge("offline", "Offline");
+    }
+  }
+}
+
+// ==========================================
+// PROTEKSI PENGATURAN & MASKING WEBHOOK
+// ==========================================
+function toggleWebhookLock() {
+  isWebhookLocked = !isWebhookLocked;
+  const btn = document.getElementById("btnToggleWebhookLock");
+  const inp = document.getElementById("webhookInput");
+
+  if (isWebhookLocked) {
+    if (btn) {
+      btn.className = "btn-lock-toggle is-locked";
+      btn.textContent = "🔒 Kunci URL Aktif";
+    }
+    if (inp) {
+      inp.readOnly = true;
+      inp.classList.add("input-locked");
+    }
+    showSecurityToast("🔒 URL Webhook dikunci untuk keamanan.");
+  } else {
+    if (btn) {
+      btn.className = "btn-lock-toggle is-unlocked";
+      btn.textContent = "🔓 Buka Kunci URL";
+    }
+    if (inp) {
+      inp.readOnly = false;
+      inp.classList.remove("input-locked");
+      inp.focus();
+    }
+    showSecurityToast("🔓 URL Webhook terbuka. Berhati-hatilah saat mengubah endpoint.");
+  }
+}
+
+function toggleWebhookVisibility() {
+  const inp = document.getElementById("webhookInput");
+  const btn = document.getElementById("btnToggleWebhookEye");
+  if (!inp) return;
+
+  isWebhookVisible = !isWebhookVisible;
+  if (isWebhookVisible) {
+    inp.type = "text";
+    if (btn) {
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+      `;
+      btn.title = "Sembunyikan URL Webhook";
+    }
+  } else {
+    inp.type = "password";
+    if (btn) {
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      `;
+      btn.title = "Tampilkan URL Webhook";
     }
   }
 }
@@ -171,21 +297,144 @@ function simpanWebhook() {
   const inp = document.getElementById("webhookInput");
   const val = inp ? inp.value.trim() : "";
   if (!val) {
-    alert("Masukkan URL Webhook Google Apps Script terlebih dahulu!");
+    showSecurityToast("⚠️ Masukkan URL Webhook Google Apps Script terlebih dahulu!");
     return;
   }
+
+  // Protokol Keamanan: Wajib HTTPS
+  if (!val.startsWith("https://")) {
+    alert("Protokol Keamanan: URL Webhook wajib menggunakan koneksi aman https://");
+    return;
+  }
+
   localStorage.setItem("GAS_WEBHOOK_URL", val);
-  alert("Webhook berhasil disimpan!");
-  switchTab('dashboard');
-  tarikSemuaData();
+
+  // Kunci kembali secara otomatis setelah simpan
+  isWebhookLocked = true;
+  isWebhookVisible = false;
+  inp.type = "password";
+  inp.readOnly = true;
+  inp.classList.add("input-locked");
+  const btnLock = document.getElementById("btnToggleWebhookLock");
+  if (btnLock) {
+    btnLock.className = "btn-lock-toggle is-locked";
+    btnLock.textContent = "🔒 Kunci URL Aktif";
+  }
+
+  showSecurityToast("✓ Webhook berhasil disimpan & dikunci dengan aman!");
+  setTimeout(() => {
+    switchTab('dashboard');
+    tarikSemuaData();
+  }, 400);
+}
+
+// ==========================================
+// CADANGAN & PEMULIHAN MANDIRI (JSON BACKUP)
+// ==========================================
+function eksporCadanganData() {
+  if (allPelayaran.length === 0 && allRincian.length === 0) {
+    showSecurityToast("⚠️ Belum ada data pelayaran untuk dicadangkan.");
+    return;
+  }
+
+  const backupData = {
+    app: "PARENGGEKITA",
+    version: "1.0",
+    waktu_ekspor: new Date().toISOString(),
+    total_kapal: allPelayaran.length,
+    total_rincian: allRincian.length,
+    pelayaran: allPelayaran,
+    rincian: allRincian
+  };
+
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+  const dlAnchor = document.createElement("a");
+  const tglSekarang = new Date().toISOString().slice(0, 10);
+  const jamSekarang = new Date().toTimeString().slice(0, 5).replace(":", "");
+  dlAnchor.setAttribute("href", dataStr);
+  dlAnchor.setAttribute("download", `Cadangan_Manifes_Kapal_${tglSekarang}_${jamSekarang}.json`);
+  document.body.appendChild(dlAnchor);
+  dlAnchor.click();
+  dlAnchor.remove();
+
+  showSecurityToast(`✓ Cadangan ${allPelayaran.length} kapal berhasil diunduh!`);
+}
+
+function triggerImporCadangan() {
+  const input = document.getElementById("backupFileInput");
+  if (input) {
+    input.value = "";
+    input.click();
+  }
+}
+
+function handleFileImporCadangan(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const content = evt.target.result;
+      const parsed = JSON.parse(content);
+
+      // Validasi Skema Data Cadangan
+      if (!parsed || !Array.isArray(parsed.pelayaran)) {
+        throw new Error("Format file JSON tidak valid (array 'pelayaran' tidak ditemukan).");
+      }
+
+      const jmlKapal = parsed.pelayaran.length;
+      const jmlRincian = Array.isArray(parsed.rincian) ? parsed.rincian.length : 0;
+
+      const konfirmasi = confirm(
+        `Pulihkan Data dari Cadangan Mandiri?\n\n` +
+        `• Jumlah Kapal: ${jmlKapal}\n` +
+        `• Jumlah Rincian Muatan: ${jmlRincian}\n` +
+        `• Waktu Cadangan: ${parsed.waktu_ekspor || "Tidak tercatat"}\n\n` +
+        `Data lokal saat ini (${allPelayaran.length} kapal) akan digantikan dengan isi cadangan ini. Lanjutkan?`
+      );
+
+      if (!konfirmasi) {
+        showSecurityToast("Pemulihan data dibatalkan.");
+        return;
+      }
+
+      allPelayaran = parsed.pelayaran;
+      allRincian = parsed.rincian || [];
+
+      // Simpan ke Cache Offline
+      try {
+        localStorage.setItem("CACHE_PELAYARAN", JSON.stringify(allPelayaran));
+        localStorage.setItem("CACHE_RINCIAN", JSON.stringify(allRincian));
+      } catch (cErr) {
+        console.warn("Gagal simpan ke cache:", cErr);
+      }
+
+      updateStatusBadge("cache", "Cadangan", ` (${allPelayaran.length} Kapal)`);
+      if (document.getElementById("countMuatan")) {
+        document.getElementById("countMuatan").textContent = allRincian.length;
+      }
+
+      renderDashboard();
+      filterData();
+      renderSemuaMuatan();
+      renderAuditTab();
+
+      showSecurityToast(`✓ ${jmlKapal} kapal berhasil dipulihkan dari cadangan!`);
+    } catch (err) {
+      console.error("Gagal membaca file cadangan:", err);
+      alert("Gagal memulihkan file cadangan: " + err.message);
+    }
+  };
+  reader.readAsText(file);
 }
 
 function bersihkanCache() {
-  if (confirm("Bersihkan cache lokal pelayaran dan muatan di perangkat ini?")) {
+  if (confirm("Peringatan Keamanan: Bersihkan seluruh cache lokal pelayaran dan muatan di perangkat ini?")) {
     localStorage.removeItem("CACHE_PELAYARAN");
     localStorage.removeItem("CACHE_RINCIAN");
-    alert("Cache lokal berhasil dibersihkan.");
-    location.reload();
+    showSecurityToast("✓ Cache lokal berhasil dibersihkan.");
+    setTimeout(() => location.reload(), 500);
   }
 }
 
@@ -656,22 +905,27 @@ function renderDaftarKapal() {
     const isOk = p.status_selisih === "SESUAI";
     const badgeClass = isOk ? "badge-status-ok" : "badge-status-warn";
     const badgeLabel = isOk ? "SESUAI ✓" : "SELISIH ⚠️";
+    const safeNama = escapeHtml(p.nama_kapal);
+    const safeTanggal = escapeHtml(p.tanggal || "-");
+    const safeJuragan = escapeHtml(p.juragan || "-");
+    const safeLokasi = escapeHtml(p.lokasi_muat || "DDL");
+    const safeKunci = escapeHtml(p.kunci_unik);
 
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
       <div class="card-header">
-        <div class="card-title">${p.nama_kapal}</div>
+        <div class="card-title">${safeNama}</div>
         <span class="${badgeClass}">${badgeLabel}</span>
       </div>
       <div class="card-meta-list">
-        <div>📅 <b>Tanggal:</b> ${p.tanggal || "-"}</div>
-        <div>👤 <b>Juragan:</b> ${p.juragan || "-"}</div>
-        <div>📍 <b>Lokasi Muat:</b> ${p.lokasi_muat || "DDL"}</div>
+        <div>📅 <b>Tanggal:</b> ${safeTanggal}</div>
+        <div>👤 <b>Juragan:</b> ${safeJuragan}</div>
+        <div>📍 <b>Lokasi Muat:</b> ${safeLokasi}</div>
       </div>
       <div class="card-footer">
         <div class="card-total-box">📦 ${formatDots(p.total_hitung)} Gabus</div>
-        <button class="btn-action" onclick="bukaNota('${p.kunci_unik}')">Buka / Cetak Nota</button>
+        <button class="btn-action" onclick="bukaNota('${safeKunci}')">Buka / Cetak Nota</button>
       </div>
     `;
     container.appendChild(card);
@@ -748,7 +1002,7 @@ function renderSemuaMuatan(searchQuery = "") {
   if (aggregatedList.length === 0) {
     container.innerHTML = `
       <div class="card" style="grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-        Tidak ada data kapal parengge yang sesuai dengan pencarian "${searchQuery}".
+        Tidak ada data kapal parengge yang sesuai dengan pencarian "${escapeHtml(searchQuery)}".
       </div>
     `;
     return;
@@ -759,13 +1013,13 @@ function renderSemuaMuatan(searchQuery = "") {
     card.className = "parengge-card";
     
     let detailHtml = item.riwayat_pengiriman.map(rip => 
-      `<div>• Kapal: <b>${rip.kapal}</b> (${rip.tanggal}) — <b>${rip.jumlah} Gabus</b></div>`
+      `<div>• Kapal: <b>${escapeHtml(rip.kapal)}</b> (${escapeHtml(rip.tanggal)}) — <b>${rip.jumlah} Gabus</b></div>`
     ).join("");
 
     card.innerHTML = `
       <div class="parengge-card-header">
         <div>
-          <div class="parengge-title">${item.nama_asli}</div>
+          <div class="parengge-title">${escapeHtml(item.nama_asli)}</div>
           <div class="parengge-meta">Total Pengiriman: ${item.riwayat_pengiriman.length} kali</div>
         </div>
         <div class="parengge-gabus-badge">
@@ -805,19 +1059,25 @@ function renderAuditTab() {
     const card = document.createElement("div");
     card.className = "card";
     card.style.borderLeft = "4px solid var(--warning-text)";
+    const safeNama = escapeHtml(p.nama_kapal);
+    const safeTanggal = escapeHtml(p.tanggal || "-");
+    const safeJuragan = escapeHtml(p.juragan || "-");
+    const safeLokasi = escapeHtml(p.lokasi_muat || "DDL");
+    const safeKunci = escapeHtml(p.kunci_unik);
+
     card.innerHTML = `
       <div class="card-header">
-        <div class="card-title">${p.nama_kapal}</div>
+        <div class="card-title">${safeNama}</div>
         <span class="badge-status-warn">SELISIH ⚠️</span>
       </div>
       <div class="card-meta-list">
-        <div>📅 <b>Tanggal:</b> ${p.tanggal || "-"}</div>
-        <div>👤 <b>Juragan:</b> ${p.juragan || "-"}</div>
-        <div>📍 <b>Lokasi Muat:</b> ${p.lokasi_muat || "DDL"}</div>
+        <div>📅 <b>Tanggal:</b> ${safeTanggal}</div>
+        <div>👤 <b>Juragan:</b> ${safeJuragan}</div>
+        <div>📍 <b>Lokasi Muat:</b> ${safeLokasi}</div>
         <div>📦 <b>Total Hitung:</b> ${formatDots(p.total_hitung)} Gabus</div>
       </div>
       <div class="card-footer">
-        <button class="btn-action" onclick="bukaNota('${p.kunci_unik}')" style="background: var(--warning-text); width: 100%; justify-content: center;">
+        <button class="btn-action" onclick="bukaNota('${safeKunci}')" style="background: var(--warning-text); width: 100%; justify-content: center;">
           🔍 Periksa & Edit Nota
         </button>
       </div>
@@ -828,7 +1088,87 @@ function renderAuditTab() {
 
 // ==========================================
 // MODAL NOTA KONTAN CETAK (A6)
+// DILENGKAPI PROTEKSI EDIT LAYAR SENTUH (SAFE-LOCK)
 // ==========================================
+function toggleEditLock() {
+  isEditLocked = !isEditLocked;
+  updateLockUI();
+  if (isEditLocked) {
+    showSecurityToast("🔒 Proteksi Aktif: Data nota aman dari sentuhan tak sengaja.");
+  } else {
+    showSecurityToast("🔓 Mode Edit Terbuka: Rincian nota dapat diubah.");
+  }
+}
+
+function updateLockUI() {
+  const btn = document.getElementById("btnLockToggle");
+  const icon = document.getElementById("lockToggleIcon");
+  const text = document.getElementById("lockToggleText");
+  const banner = document.getElementById("lockNoticeBanner");
+  const printArea = document.getElementById("notaPrintArea");
+  const addWrap = document.getElementById("btnTambahBarisManualWrap");
+
+  if (isEditLocked) {
+    if (btn) {
+      btn.className = "btn-lock-toggle is-locked";
+      if (icon) icon.textContent = "🔒";
+      if (text) text.textContent = "Terkunci (Aman)";
+      btn.title = "Klik untuk membuka kunci edit rincian";
+    }
+    if (banner) {
+      banner.className = "lock-notice-banner no-print";
+      banner.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <span><strong>Proteksi Layar Sentuh Aktif:</strong> Data aman dari sentuhan tak sengaja di pelabuhan. Klik tombol <strong>Buka Kunci</strong> di atas untuk mengedit.</span>
+      `;
+    }
+    if (printArea) printArea.classList.add("nota-table-locked");
+    if (addWrap) addWrap.style.display = "none";
+
+    if (printArea) {
+      printArea.querySelectorAll("input").forEach(inp => {
+        inp.readOnly = true;
+      });
+    }
+    const inpResi = document.getElementById("inpResi");
+    if (inpResi) inpResi.readOnly = true;
+    const inpPot = document.getElementById("inpPotonganNom");
+    if (inpPot) inpPot.readOnly = true;
+  } else {
+    if (btn) {
+      btn.className = "btn-lock-toggle is-unlocked";
+      if (icon) icon.textContent = "🔓";
+      if (text) text.textContent = "Buka Kunci";
+      btn.title = "Klik untuk mengunci kembali proteksi layar sentuh";
+    }
+    if (banner) {
+      banner.className = "lock-notice-banner is-unlocked no-print";
+      banner.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+        </svg>
+        <span><strong>Mode Edit Aktif:</strong> Anda dapat mengubah nama parengge, muatan gabus, dan potongan. Kunci kembali jika selesai.</span>
+      `;
+    }
+    if (printArea) printArea.classList.remove("nota-table-locked");
+    if (addWrap) addWrap.style.display = "block";
+
+    if (printArea) {
+      printArea.querySelectorAll("input").forEach(inp => {
+        inp.readOnly = false;
+      });
+    }
+    const inpResi = document.getElementById("inpResi");
+    if (inpResi) inpResi.readOnly = false;
+    const inpPot = document.getElementById("inpPotonganNom");
+    if (inpPot) inpPot.readOnly = false;
+  }
+}
+
 function bukaNota(kunciUnik) {
   activeKapal = allPelayaran.find(p => p.kunci_unik === kunciUnik);
   if (!activeKapal) return;
@@ -880,7 +1220,10 @@ function bukaNota(kunciUnik) {
 
   potonganNominal = parseDots(activeKapal.potongan) || 0;
 
+  // Keamanan Operasional: Default SELALU terkunci saat dibuka
+  isEditLocked = true;
   renderBlangkoNota();
+  updateLockUI();
   updateSaveIndicator("saved");
   document.getElementById("notaModal").classList.add("active");
 }
@@ -895,19 +1238,29 @@ function tutupNota() {
 }
 
 function tambahBarisManual() {
+  if (isEditLocked) {
+    showSecurityToast("🔒 Buka kunci edit terlebih dahulu untuk menambah baris!");
+    return;
+  }
   notaItems.push({
     nama: "Kapal Parengge Baru",
     gabus: 1,
     ongkir: 0
   });
   renderBlangkoNota();
+  updateLockUI();
   triggerAutoSave();
+  showSecurityToast("Baris kapal parengge manual ditambahkan.");
 }
 
 function hapusBaris(idx) {
+  if (isEditLocked) {
+    showSecurityToast("🔒 Buka kunci edit terlebih dahulu untuk menghapus baris!");
+    return;
+  }
   const item = notaItems[idx];
   const nama = item ? item.nama : "baris ini";
-  if (confirm(`Hapus baris "${nama}" dari nota ini?`)) {
+  if (confirm(`Peringatan Keamanan: Hapus baris "${nama}" dari nota ini?`)) {
     const itemDihapus = notaItems[idx];
     const namaHapus = (itemDihapus.nama || "").trim().toLowerCase();
 
@@ -921,25 +1274,28 @@ function hapusBaris(idx) {
     });
 
     renderBlangkoNota();
+    updateLockUI();
     renderSemuaMuatan();
     renderDashboard();
     triggerAutoSave();
+    showSecurityToast(`Baris "${nama}" berhasil dihapus.`);
   }
 }
 
 // ==========================================
 // RENDER BLANGKO NOTA (PRESISI CETAK A6)
+// DILENGKAPI SANITASI INPUT ANTI-XSS
 // ==========================================
 function renderBlangkoNota() {
   const printArea = document.getElementById("notaPrintArea");
 
-  let tglStr = activeKapal.tanggal;
+  let tglStr = escapeHtml(activeKapal.tanggal);
   try {
     const [y, m, d] = activeKapal.tanggal.split("-");
     tglStr = `${d} - ${m} - ${y}`;
   } catch (e) {}
 
-  let resiVal = activeKapal.resi || "1";
+  let resiVal = escapeHtml(activeKapal.resi || "1");
   const isCompact = notaItems.length > 6;
   const sheetClass = isCompact ? "nota-sheet compact-sheet" : "nota-sheet";
 
@@ -950,30 +1306,31 @@ function renderBlangkoNota() {
         <td colspan="4" style="text-align: center; color: var(--danger-text); padding: 8px; font-weight: 600;">
           ⚠️ Rincian muatan kapal ini belum ada / kosong.<br>
           <small style="color: var(--text-muted); font-weight: normal;">
-            Klik "+ Tambah Baris Kapal Parengge Manual" di bawah untuk menambahkan.
+            Klik "Buka Kunci" lalu "+ Tambah Baris Kapal Parengge Manual" di bawah untuk menambahkan.
           </small>
         </td>
       </tr>
     `;
   } else {
     notaItems.forEach((item, idx) => {
+      const safeNama = escapeHtml(item.nama);
       rowsHtml += `
         <tr>
           <td class="cell-no">${idx + 1}</td>
           <td style="padding-left: 5px;">
-            <span class="print-text text-left" id="txtPrintNama_${idx}">${item.nama}</span>
+            <span class="print-text text-left" id="txtPrintNama_${idx}">${safeNama}</span>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
-              <input type="text" class="inp-nama no-print" value="${item.nama}" oninput="updateNamaItem(${idx}, this.value)" style="flex: 1;">
+              <input type="text" class="inp-nama no-print" value="${safeNama}" oninput="updateNamaItem(${idx}, this.value)" style="flex: 1;" ${isEditLocked ? 'readonly' : ''}>
               <button type="button" class="btn-del-item no-print" onclick="hapusBaris(${idx})" title="Hapus Baris">🗑️</button>
             </div>
           </td>
           <td style="text-align: center;">
             <span class="print-text text-center" id="txtPrintGabus_${idx}">${item.gabus}</span>
-            <input type="number" class="inp-gabus no-print" value="${item.gabus}" oninput="updateGabusItem(${idx}, this.value)">
+            <input type="number" class="inp-gabus no-print" value="${item.gabus}" oninput="updateGabusItem(${idx}, this.value)" ${isEditLocked ? 'readonly' : ''}>
           </td>
           <td style="text-align: right; padding-right: 5px;">
             <span class="print-text text-right font-bold" id="txtPrintOngkir_${idx}">${item.ongkir ? formatDots(item.ongkir) : ''}</span>
-            <input type="text" inputmode="numeric" class="inp-ongkir no-print" placeholder="0" value="${item.ongkir ? formatDots(item.ongkir) : ''}" oninput="handleOngkirInput(${idx}, this)">
+            <input type="text" inputmode="numeric" class="inp-ongkir no-print" placeholder="0" value="${item.ongkir ? formatDots(item.ongkir) : ''}" oninput="handleOngkirInput(${idx}, this)" ${isEditLocked ? 'readonly' : ''}>
           </td>
         </tr>
       `;
@@ -989,7 +1346,7 @@ function renderBlangkoNota() {
         <div class="resi-wrap">
           <span>Res</span>
           <span class="print-text print-resi-box" id="txtPrintResi">${resiVal}</span>
-          <input type="text" class="resi-input no-print" id="inpResi" value="${resiVal}" oninput="handleResiInput(this.value)">
+          <input type="text" class="resi-input no-print" id="inpResi" value="${resiVal}" oninput="handleResiInput(this.value)" ${isEditLocked ? 'readonly' : ''}>
         </div>
         <div class="nota-header-title">
           <div class="nota-title-brand-row">
@@ -1004,17 +1361,17 @@ function renderBlangkoNota() {
         <tr>
           <td class="lbl">Kapal Pengangkut</td>
           <td class="col">:</td>
-          <td class="val">${activeKapal.nama_kapal}</td>
+          <td class="val">${escapeHtml(activeKapal.nama_kapal)}</td>
         </tr>
         <tr>
           <td class="lbl">Juragan</td>
           <td class="col">:</td>
-          <td class="val">${activeKapal.juragan || "-"}</td>
+          <td class="val">${escapeHtml(activeKapal.juragan || "-")}</td>
         </tr>
         <tr>
           <td class="lbl">Lokasi Muat</td>
           <td class="col">:</td>
-          <td class="val">${activeKapal.lokasi_muat || "DDL"}</td>
+          <td class="val">${escapeHtml(activeKapal.lokasi_muat || "DDL")}</td>
         </tr>
       </table>
 
@@ -1050,7 +1407,7 @@ function renderBlangkoNota() {
             <td class="lbl-calc">Potongan:</td>
             <td class="val-calc">
               <span class="print-text text-right font-bold" id="txtPrintPotongan">${potonganNominal ? formatDots(potonganNominal) : ''}</span>
-              <input type="text" id="inpPotonganNom" inputmode="numeric" class="inp-potongan no-print" placeholder="0" value="${potonganNominal ? formatDots(potonganNominal) : ''}" oninput="handlePotonganNominalInput(this)">
+              <input type="text" id="inpPotonganNom" inputmode="numeric" class="inp-potongan no-print" placeholder="0" value="${potonganNominal ? formatDots(potonganNominal) : ''}" oninput="handlePotonganNominalInput(this)" ${isEditLocked ? 'readonly' : ''}>
             </td>
           </tr>
           <tr style="background:#f4f4f4;">
@@ -1070,13 +1427,15 @@ function renderBlangkoNota() {
   `;
 
   hitungNota();
+  updateLockUI();
 }
 
 // ==========================================
 // LIVE SYNC INPUT KE CETAK & AUTOSAVE
+// DILENGKAPI GUARD KUNCI EDIT (TOUCH-SAFE)
 // ==========================================
 function updateNamaItem(idx, val) {
-  if (!notaItems[idx]) return;
+  if (isEditLocked || !notaItems[idx]) return;
   notaItems[idx].nama = val;
   const printEl = document.getElementById(`txtPrintNama_${idx}`);
   if (printEl) printEl.textContent = val;
@@ -1084,7 +1443,7 @@ function updateNamaItem(idx, val) {
 }
 
 function updateGabusItem(idx, val) {
-  if (!notaItems[idx]) return;
+  if (isEditLocked || !notaItems[idx]) return;
   const num = Number(val) || 0;
   notaItems[idx].gabus = num;
 
@@ -1101,6 +1460,7 @@ function updateGabusItem(idx, val) {
 }
 
 function handleOngkirInput(idx, inputEl) {
+  if (isEditLocked || !notaItems[idx]) return;
   let num = parseDots(inputEl.value);
   inputEl.value = num ? formatDots(num) : "";
   notaItems[idx].ongkir = num;
@@ -1113,6 +1473,7 @@ function handleOngkirInput(idx, inputEl) {
 }
 
 function handlePotonganNominalInput(inputEl) {
+  if (isEditLocked) return;
   let num = parseDots(inputEl.value);
   inputEl.value = num ? formatDots(num) : "";
   potonganNominal = num;
@@ -1125,7 +1486,8 @@ function handlePotonganNominalInput(inputEl) {
 }
 
 function handleResiInput(val) {
-  if (activeKapal) activeKapal.resi = val;
+  if (isEditLocked || !activeKapal) return;
+  activeKapal.resi = val;
   const printResi = document.getElementById("txtPrintResi") || document.querySelector(".print-resi-box");
   if (printResi) printResi.textContent = val;
   triggerAutoSave();

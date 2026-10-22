@@ -1252,6 +1252,239 @@ body::-webkit-scrollbar,
 }
 
 /* ============================================================== */
+/* FITUR KEAMANAN APLIKASI (FEATURE SECURITY SUITE)               */
+/* ============================================================== */
+
+/* 1. Tombol & Banner Kunci Edit Proteksi Layar Sentuh */
+.btn-lock-toggle {
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(12, 35, 64, 0.04);
+}
+
+.btn-lock-toggle.is-locked {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.btn-lock-toggle.is-locked:hover {
+  background: #dcfce7;
+}
+
+.btn-lock-toggle.is-unlocked {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+  animation: pulse-border 1.5s infinite;
+}
+
+@keyframes pulse-border {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  70% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.lock-notice-banner {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.35;
+  transition: all 0.2s ease;
+}
+
+.lock-notice-banner.is-unlocked {
+  background: #fffbeb;
+  border-color: #fef3c7;
+  color: #92400e;
+}
+
+/* Kunci Ubah Data: Tampilan Readonly Aman Saat Terkunci */
+.nota-table-locked input {
+  pointer-events: none !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  cursor: default !important;
+  user-select: text !important;
+}
+
+.nota-table-locked .btn-del-item,
+.nota-table-locked #btnTambahBarisManualWrap {
+  display: none !important;
+}
+
+/* 2. Kartu Keamanan di Menu Pengaturan */
+.security-card-section {
+  border-top: 1px solid var(--border);
+  padding-top: 1.15rem;
+}
+
+.security-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.security-card-title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+.security-icon {
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.webhook-input-wrap {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-bottom: 0.65rem;
+}
+
+.webhook-input {
+  width: 100%;
+  padding-right: 42px !important;
+}
+
+.webhook-input.input-locked {
+  background: #f8fafc !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
+}
+
+.btn-addon-eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-addon-eye:hover {
+  background: #f1f5f9;
+  color: var(--primary);
+}
+
+.backup-btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 600px) {
+  .backup-btn-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.btn-backup-export {
+  background: var(--primary);
+  color: #fff;
+  padding: 0.65rem 0.85rem;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.btn-backup-import {
+  background: #0f766e;
+  color: #fff;
+  padding: 0.65rem 0.85rem;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.btn-backup-import:hover {
+  background: #115e59;
+}
+
+.security-checklist-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+}
+
+.security-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.check-bullet {
+  color: #16a34a;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+/* 3. Floating Security Toast Notification */
+.security-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(40px);
+  background: #0c2340;
+  color: #ffffff;
+  padding: 0.65rem 1.15rem;
+  border-radius: 24px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  z-index: 10000;
+  box-shadow: 0 8px 24px rgba(12, 35, 64, 0.25);
+  border: 1px solid rgba(56, 136, 204, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  max-width: 90vw;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.security-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ============================================================== */
 /* STRUKTUR NOTA KONTAN (PRESISI UNTUK CETAK A6)                  */
 /* ============================================================== */
 .nota-sheet {
