@@ -1517,13 +1517,13 @@ body::-webkit-scrollbar,
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) rotate(-10deg);
-  width: 72%;
-  max-width: 250px;
+  transform: translate(-50%, -50%);
+  width: 65%;
+  max-width: 220px;
   pointer-events: none;
   user-select: none;
   z-index: 0;
-  opacity: 0.08;
+  opacity: 0.14;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1710,14 +1710,14 @@ table.items-table td {
   text-align: right;
   font-size: 10px;
   outline: none;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.75);
   color: #000;
 }
 
 .calc-side-left {
   text-align: center !important;
   vertical-align: middle !important;
-  background: #fafafa;
+  background: rgba(250, 250, 250, 0.7);
   padding: 5px 3px !important;
 }
 
@@ -1748,7 +1748,7 @@ table.items-table td {
   color: #000;
   text-align: left;
   padding-left: 5px !important;
-  background: #fafafa;
+  background: rgba(250, 250, 250, 0.7);
   white-space: nowrap;
 }
 
@@ -1774,7 +1774,7 @@ table.items-table td {
   text-align: right;
   font-size: 10px;
   color: #000;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.75);
 }
 
 .print-text {
@@ -2438,12 +2438,12 @@ table.items-table td {
   .nota-watermark {
     display: flex !important;
     position: absolute !important;
-    top: 52% !important;
+    top: 50% !important;
     left: 50% !important;
-    transform: translate(-50%, -50%) rotate(-10deg) !important;
-    width: 68% !important;
-    max-width: 240px !important;
-    opacity: 0.09 !important;
+    transform: translate(-50%, -50%) !important;
+    width: 60% !important;
+    max-width: 200px !important;
+    opacity: 0.12 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     z-index: 0 !important;

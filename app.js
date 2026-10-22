@@ -1271,10 +1271,7 @@ function renderBlangkoNota() {
             <input type="text" class="resi-input no-print" id="inpResi" value="${resiVal}" oninput="handleResiInput(this.value)">
           </div>
           <div class="nota-header-title">
-            <div class="nota-title-brand-row">
-              <img src="logo.png" alt="Logo PARENGGEKITA" class="nota-mini-logo">
-              <span>NOTA ONGKIR</span>
-            </div>
+            <span>NOTA ONGKIR</span>
           </div>
           <div class="nota-header-date">${tglStr}</div>
         </div>
