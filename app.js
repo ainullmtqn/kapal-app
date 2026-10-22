@@ -2,15 +2,20 @@ let allPelayaran = [];
 let allRincian = [];
 let filteredPelayaran = [];
 let currentFilterPill = 'SEMUA';
+let currentDashChip = 'SEMUA';
+let currentTab = 'dashboard'; // 'dashboard' | 'kapal' | 'muatan' | 'audit' | 'setting'
 let activeKapal = null;
 let notaItems = [];
 let potonganNominal = 0;
 let autoSaveTimer = null;
 
+// ==========================================
+// FORMATTER ANGKA & TANGGAL
+// ==========================================
 function formatDots(val) {
-  if (!val && val !== 0) return "";
+  if (!val && val !== 0) return "0";
   let str = val.toString().replace(/\D/g, "");
-  if (!str) return "";
+  if (!str) return "0";
   return new Intl.NumberFormat("id-ID").format(Number(str));
 }
 
@@ -20,36 +25,110 @@ function parseDots(str) {
   return Number(digits) || 0;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const savedWebhook = localStorage.getItem("GAS_WEBHOOK_URL") || "";
-  document.getElementById("webhookInput").value = savedWebhook;
+function formatRp(n) {
+  return new Intl.NumberFormat("id-ID").format(Math.round(n || 0));
+}
 
+function formatTanggalIndo(dateObj = new Date()) {
+  const hariArr = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  const bulanArr = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+  const hari = hariArr[dateObj.getDay()];
+  const tgl = dateObj.getDate();
+  const bln = bulanArr[dateObj.getMonth()];
+  const thn = dateObj.getFullYear();
+  return `${hari}, ${tgl} ${bln} ${thn}`;
+}
+
+// ==========================================
+// INISIALISASI APLIKASI & CACHE OFFLINE
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+  const dateEl = document.getElementById("currentDateDisplay");
+  if (dateEl) dateEl.textContent = formatTanggalIndo();
+
+  const savedWebhook = localStorage.getItem("GAS_WEBHOOK_URL") || "";
+  const inpWebhook = document.getElementById("webhookInput");
+  if (inpWebhook) inpWebhook.value = savedWebhook;
+
+  // 1. Muat Cache Offline terlebih dahulu (Instant 0ms display)
+  try {
+    const cachedPel = localStorage.getItem("CACHE_PELAYARAN");
+    const cachedRin = localStorage.getItem("CACHE_RINCIAN");
+    if (cachedPel && cachedRin) {
+      allPelayaran = JSON.parse(cachedPel) || [];
+      allRincian = JSON.parse(cachedRin) || [];
+      if (allPelayaran.length > 0) {
+        updateStatusBadge("cache", `● Cache (${allPelayaran.length} Kapal)`);
+        renderDashboard();
+        filterData();
+        renderSemuaMuatan();
+        renderAuditTab();
+      }
+    }
+  } catch (err) {
+    console.warn("Gagal membaca cache lokal:", err);
+  }
+
+  // 2. Setup Dismiss Modal (Backdrop Click & ESC Key)
+  const modal = document.getElementById("notaModal");
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) tutupNota();
+    });
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal && modal.classList.contains("active")) {
+      tutupNota();
+    }
+  });
+
+  // 3. Tarik data terbaru dari Google Apps Script
   if (savedWebhook) {
     tarikSemuaData();
-  } else {
-    document.getElementById("shipCardList").innerHTML = `
-      <div class="card" style="text-align: center; padding: 2rem 1rem;">
-        <p style="font-weight: 700; margin-bottom: 0.5rem;">Selamat Datang di Web Manifes Kapal</p>
-        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
-          Silakan masukkan URL Webhook Apps Script di menu Pengaturan untuk memuat database pelayaran.
-        </p>
-        <button class="btn-action" onclick="switchTab('setting', document.querySelectorAll('.nav-item')[2])">
-          ⚙️ Buka Pengaturan
-        </button>
-      </div>
-    `;
+  } else if (allPelayaran.length === 0) {
+    updateStatusBadge("offline", "● Webhook Belum Diatur");
   }
 });
 
+function updateStatusBadge(status, text) {
+  const badge = document.getElementById("statusBadge");
+  const badgeText = document.getElementById("statusBadgeText");
+  if (!badge || !badgeText) return;
+
+  badgeText.textContent = text;
+  
+  if (status === "online") {
+    badge.style.background = "var(--success-bg)";
+    badge.style.borderColor = "var(--success-border)";
+    badge.style.color = "var(--success-text)";
+  } else if (status === "loading") {
+    badge.style.background = "var(--primary-light)";
+    badge.style.borderColor = "#bfdbfe";
+    badge.style.color = "var(--primary)";
+  } else {
+    badge.style.background = "var(--warning-bg)";
+    badge.style.borderColor = "var(--warning-border)";
+    badge.style.color = "var(--warning-text)";
+  }
+}
+
+// ==========================================
+// KONEKSI WEBHOOK GOOGLE APPS SCRIPT
+// ==========================================
 async function tarikSemuaData() {
   const url = localStorage.getItem("GAS_WEBHOOK_URL");
-  if (!url) return;
+  if (!url) {
+    alert("Silakan masukkan URL Webhook Apps Script di menu Pengaturan!");
+    switchTab('setting');
+    return;
+  }
 
-  const badge = document.getElementById("statusBadge");
-  badge.textContent = "● Memuat...";
+  updateStatusBadge("loading", "Menghubungkan...");
 
   try {
     const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP Status " + res.status);
     const data = await res.json();
 
     if (data.status === "sukses") {
@@ -57,45 +136,200 @@ async function tarikSemuaData() {
       allRincian = data.rincian || [];
       
       allPelayaran.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
+
+      // Simpan ke Cache Offline
+      try {
+        localStorage.setItem("CACHE_PELAYARAN", JSON.stringify(allPelayaran));
+        localStorage.setItem("CACHE_RINCIAN", JSON.stringify(allRincian));
+      } catch (cacheErr) {
+        console.warn("Penyimpanan cache gagal:", cacheErr);
+      }
       
-      badge.textContent = `● Online (${allPelayaran.length} Kapal | ${allRincian.length} Parengge)`;
+      updateStatusBadge("online", `● Online (${allPelayaran.length} Kapal)`);
       if (document.getElementById("countMuatan")) {
         document.getElementById("countMuatan").textContent = allRincian.length;
       }
 
+      renderDashboard();
       filterData();
       renderSemuaMuatan();
+      renderAuditTab();
     } else {
-      badge.textContent = "● Kendala Database";
-      alert("Gagal membaca database: " + (data.pesan || ""));
+      updateStatusBadge("offline", "● Kendala Spreadsheet");
+      alert("Gagal membaca database: " + (data.pesan || "Terjadi kesalahan"));
     }
   } catch (e) {
-    badge.textContent = "● Offline";
-    console.error(e);
+    console.error("Gagal menarik data:", e);
+    if (allPelayaran.length > 0) {
+      updateStatusBadge("offline", `● Offline (Data Cache)`);
+    } else {
+      updateStatusBadge("offline", "● Offline / Jaringan");
+    }
   }
 }
 
 function simpanWebhook() {
-  const val = document.getElementById("webhookInput").value.trim();
+  const inp = document.getElementById("webhookInput");
+  const val = inp ? inp.value.trim() : "";
   if (!val) {
-    alert("Masukkan URL Webhook terlebih dahulu!");
+    alert("Masukkan URL Webhook Google Apps Script terlebih dahulu!");
     return;
   }
   localStorage.setItem("GAS_WEBHOOK_URL", val);
   alert("Webhook berhasil disimpan!");
-  switchTab('kapal', document.querySelectorAll('.nav-item')[0]);
+  switchTab('dashboard');
   tarikSemuaData();
 }
 
+function bersihkanCache() {
+  if (confirm("Bersihkan cache lokal pelayaran dan muatan di perangkat ini?")) {
+    localStorage.removeItem("CACHE_PELAYARAN");
+    localStorage.removeItem("CACHE_RINCIAN");
+    alert("Cache lokal berhasil dibersihkan.");
+    location.reload();
+  }
+}
+
+// ==========================================
+// RENDER TAB 1: BERANDA (DASHBOARD)
+// ==========================================
+function renderDashboard() {
+  const totalKapal = allPelayaran.length;
+  const totalGabus = allPelayaran.reduce((sum, p) => sum + (Number(p.total_hitung) || 0), 0);
+  
+  // Hitung Parengge Unik
+  let parenggeMap = {};
+  allRincian.forEach(r => {
+    let rawName = (r.nama_pemilik || "Tanpa Nama").trim();
+    let key = rawName.toLowerCase();
+    if (!parenggeMap[key]) parenggeMap[key] = true;
+  });
+  const totalParengge = Object.keys(parenggeMap).length;
+
+  const selisihList = allPelayaran.filter(p => p.status_selisih !== "SESUAI");
+
+  // 1. Update 4 KPI Cards
+  const kpiKapal = document.getElementById("kpiKapalOnline");
+  if (kpiKapal) kpiKapal.textContent = `${totalKapal} Kapal`;
+
+  const kpiGabus = document.getElementById("kpiTotalGabus");
+  if (kpiGabus) kpiGabus.textContent = `${formatDots(totalGabus)} Gabus`;
+
+  const kpiParengge = document.getElementById("kpiTotalParengge");
+  if (kpiParengge) kpiParengge.textContent = `${totalParengge} Parengge`;
+
+  const kpiAudit = document.getElementById("kpiStatusAudit");
+  const kpiSubAudit = document.getElementById("kpiSubAudit");
+  const navAuditBadge = document.getElementById("navAuditBadge");
+
+  if (kpiAudit) {
+    if (selisihList.length === 0) {
+      kpiAudit.textContent = "Semua Sesuai ✓";
+      kpiAudit.style.color = "var(--success-text)";
+      if (kpiSubAudit) kpiSubAudit.textContent = "0 Selisih hitung";
+    } else {
+      kpiAudit.textContent = `${selisihList.length} Selisih ⚠️`;
+      kpiAudit.style.color = "var(--warning-text)";
+      if (kpiSubAudit) kpiSubAudit.textContent = "Perlu verifikasi";
+    }
+  }
+
+  // 2. Alert Banner & Audit Badge
+  const alertBanner = document.getElementById("alertBanner");
+  const alertDesc = document.getElementById("alertDesc");
+
+  if (selisihList.length > 0) {
+    if (alertBanner) alertBanner.style.display = "flex";
+    if (alertDesc) alertDesc.textContent = `Ditemukan ${selisihList.length} kapal pelayaran dengan status muatan selisih.`;
+    if (navAuditBadge) {
+      navAuditBadge.style.display = "inline-block";
+      navAuditBadge.textContent = selisihList.length;
+    }
+  } else {
+    if (alertBanner) alertBanner.style.display = "none";
+    if (navAuditBadge) navAuditBadge.style.display = "none";
+  }
+
+  // 3. Render Pelayaran Aktif Cards
+  renderDashboardShipList();
+}
+
+function setDashboardChip(type, el) {
+  document.querySelectorAll('.chips-filter-row .chip-btn').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentDashChip = type;
+  renderDashboardShipList();
+}
+
+function renderDashboardShipList() {
+  const container = document.getElementById("dashShipCardList");
+  if (!container) return;
+
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  let displayList = allPelayaran.filter(p => {
+    if (currentDashChip === 'HARI_INI') return (p.tanggal === todayStr);
+    if (currentDashChip === 'KALMAS') {
+      const lok = (p.lokasi_muat || "").toLowerCase();
+      const nKapal = (p.nama_kapal || "").toLowerCase();
+      return lok.includes('kalmas') || lok.includes('ddc') || lok.includes('ddl') || nKapal.includes('kalmas');
+    }
+    if (currentDashChip === 'PUMA') {
+      const lok = (p.lokasi_muat || "").toLowerCase();
+      const nKapal = (p.nama_kapal || "").toLowerCase();
+      return lok.includes('puma') || nKapal.includes('puma');
+    }
+    if (currentDashChip === 'SELISIH') return (p.status_selisih !== "SESUAI");
+    return true;
+  });
+
+  if (displayList.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2.5rem 1rem;">
+        Tidak ada data pelayaran yang sesuai filter "${currentDashChip}".
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = displayList.map(p => {
+    const isOk = p.status_selisih === "SESUAI";
+    const badgeClass = isOk ? "badge-status-ok" : "badge-status-warn";
+    const badgeLabel = isOk ? "SESUAI ✓" : "SELISIH ⚠️";
+
+    return `
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">${p.nama_kapal}</div>
+          <span class="${badgeClass}">${badgeLabel}</span>
+        </div>
+        <div class="card-meta-list">
+          <div>📅 <b>Tanggal:</b> ${p.tanggal || "-"}</div>
+          <div>👤 <b>Juragan:</b> ${p.juragan || "-"}</div>
+          <div>📍 <b>Lokasi Muat:</b> ${p.lokasi_muat || "DDL"}</div>
+        </div>
+        <div class="card-footer">
+          <div class="card-total-box">📦 ${formatDots(p.total_hitung)} Gabus</div>
+          <button class="btn-action" onclick="bukaNota('${p.kunci_unik}')">Buka / Cetak Nota</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// ==========================================
+// RENDER TAB 2: DAFTAR SEMUA KAPAL
+// ==========================================
 function setPillFilter(type, el) {
-  document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#filterPillsWrap .pill-btn').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   currentFilterPill = type;
   filterData();
 }
 
 function filterData() {
-  const q = document.getElementById("searchInput").value.toLowerCase().trim();
+  const searchInput = document.getElementById("searchInput");
+  const q = searchInput ? searchInput.value.toLowerCase().trim() : "";
   const todayStr = new Date().toISOString().split("T")[0];
 
   filteredPelayaran = allPelayaran.filter(p => {
@@ -110,9 +344,12 @@ function filterData() {
       matchPill = (p.tanggal === todayStr);
     } else if (currentFilterPill === 'KALMAS') {
       const lok = (p.lokasi_muat || "").toLowerCase();
-      matchPill = lok.includes('kalmas') || lok.includes('ddc') || lok.includes('ddl');
+      const nKapal = (p.nama_kapal || "").toLowerCase();
+      matchPill = lok.includes('kalmas') || lok.includes('ddc') || lok.includes('ddl') || nKapal.includes('kalmas');
     } else if (currentFilterPill === 'PUMA') {
-      matchPill = (p.lokasi_muat || "").toLowerCase().includes('puma');
+      const lok = (p.lokasi_muat || "").toLowerCase();
+      const nKapal = (p.nama_kapal || "").toLowerCase();
+      matchPill = lok.includes('puma') || nKapal.includes('puma');
     }
 
     return matchSearch && matchPill;
@@ -123,11 +360,12 @@ function filterData() {
 
 function renderDaftarKapal() {
   const container = document.getElementById("shipCardList");
+  if (!container) return;
   container.innerHTML = "";
 
   if (filteredPelayaran.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted); font-size: 0.85rem;">
+      <div class="card" style="grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
         Tidak ada data kapal yang sesuai pencarian / filter.
       </div>
     `;
@@ -136,22 +374,23 @@ function renderDaftarKapal() {
 
   filteredPelayaran.forEach((p) => {
     const isOk = p.status_selisih === "SESUAI";
-    const badgeClass = isOk ? "badge-ok" : "badge-warn";
+    const badgeClass = isOk ? "badge-status-ok" : "badge-status-warn";
+    const badgeLabel = isOk ? "SESUAI ✓" : "SELISIH ⚠️";
 
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
       <div class="card-header">
         <div class="card-title">${p.nama_kapal}</div>
-        <span class="card-badge ${badgeClass}">${p.status_selisih}</span>
+        <span class="${badgeClass}">${badgeLabel}</span>
       </div>
-      <div class="card-meta">
-        <span>📅 <b>Tanggal:</b> ${p.tanggal}</span>
-        <span>👤 <b>Juragan:</b> ${p.juragan || "-"}</span>
-        <span>📍 <b>Lokasi Muat:</b> ${p.lokasi_muat || "-"}</span>
+      <div class="card-meta-list">
+        <div>📅 <b>Tanggal:</b> ${p.tanggal || "-"}</div>
+        <div>👤 <b>Juragan:</b> ${p.juragan || "-"}</div>
+        <div>📍 <b>Lokasi Muat:</b> ${p.lokasi_muat || "DDL"}</div>
       </div>
       <div class="card-footer">
-        <div class="card-total">📦 ${p.total_hitung} Gabus</div>
+        <div class="card-total-box">📦 ${formatDots(p.total_hitung)} Gabus</div>
         <button class="btn-action" onclick="bukaNota('${p.kunci_unik}')">Buka / Cetak Nota</button>
       </div>
     `;
@@ -159,17 +398,24 @@ function renderDaftarKapal() {
   });
 }
 
-function renderSemuaMuatan() {
+// ==========================================
+// RENDER TAB 3: AGREGASI MUATAN PARENGGE
+// ==========================================
+function filterParenggeTab(query) {
+  renderSemuaMuatan(query);
+}
+
+function renderSemuaMuatan(searchQuery = "") {
   const container = document.getElementById("allMuatanList");
   if (!container) return;
   container.innerHTML = "";
 
   if (allRincian.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 2.5rem 1rem; color: var(--danger); font-size: 0.85rem; font-weight: 600;">
+      <div class="card" style="grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: var(--warning-text); font-weight: 600;">
         ⚠️ Rincian muatan masih 0.<br>
         <small style="color: var(--text-muted); font-weight: normal;">
-          Pastikan Code.gs sudah diperbarui dan di-deploy versi baru.
+          Pastikan Webhook Google Apps Script terhubung dan memiliki rincian muatan.
         </small>
       </div>
     `;
@@ -179,7 +425,6 @@ function renderSemuaMuatan() {
     return;
   }
 
-  // Agregasi nama Kapal Parengge yang sama
   let aggregatedMap = {};
   allRincian.forEach((r) => {
     let rawName = (r.nama_pemilik || "Tanpa Nama").trim();
@@ -202,36 +447,52 @@ function renderSemuaMuatan() {
   });
 
   let aggregatedList = Object.values(aggregatedMap);
+
+  if (searchQuery) {
+    const qLower = searchQuery.toLowerCase();
+    aggregatedList = aggregatedList.filter(item => {
+      const matchNama = item.nama_asli.toLowerCase().includes(qLower);
+      const matchKapal = item.riwayat_pengiriman.some(rip => 
+        rip.kapal.toLowerCase().includes(qLower) || rip.tanggal.includes(qLower)
+      );
+      return matchNama || matchKapal;
+    });
+  }
+
   aggregatedList.sort((a, b) => b.total_gabus - a.total_gabus);
 
   if (document.getElementById("countMuatan")) {
-    document.getElementById("countMuatan").textContent = aggregatedList.length + " Unik";
+    document.getElementById("countMuatan").textContent = aggregatedList.length;
+  }
+
+  if (aggregatedList.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+        Tidak ada data kapal parengge yang sesuai dengan pencarian "${searchQuery}".
+      </div>
+    `;
+    return;
   }
 
   aggregatedList.forEach((item) => {
     let card = document.createElement("div");
-    card.className = "card";
-    card.style.padding = "0.85rem";
+    card.className = "parengge-card";
     
     let detailHtml = item.riwayat_pengiriman.map(rip => 
-      `<div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">
-         • Kapal Pengangkut: <b>${rip.kapal}</b> (${rip.tanggal}) — <b>${rip.jumlah} Gabus</b>
-       </div>`
+      `<div>• Kapal: <b>${rip.kapal}</b> (${rip.tanggal}) — <b>${rip.jumlah} Gabus</b></div>`
     ).join("");
 
     card.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+      <div class="parengge-card-header">
         <div>
-          <div style="font-weight: 800; font-size: 1rem; color: var(--primary);">${item.nama_asli}</div>
-          <div style="font-size: 0.78rem; font-weight: 600; color: #475569; margin-top: 1px;">
-            Total Pengiriman: ${item.riwayat_pengiriman.length} kali
-          </div>
+          <div class="parengge-title">${item.nama_asli}</div>
+          <div class="parengge-meta">Total Pengiriman: ${item.riwayat_pengiriman.length} kali</div>
         </div>
-        <div style="font-weight: 900; font-size: 1.05rem; color: var(--text); background: #f1f5f9; padding: 3px 8px; border-radius: 6px;">
-          📦 ${item.total_gabus} Gabus
+        <div class="parengge-gabus-badge">
+          📦 ${formatDots(item.total_gabus)} G
         </div>
       </div>
-      <div style="border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 5px;">
+      <div class="parengge-history-list">
         ${detailHtml}
       </div>
     `;
@@ -239,27 +500,99 @@ function renderSemuaMuatan() {
   });
 }
 
+// ==========================================
+// RENDER TAB 4: AUDIT & SELISIH
+// ==========================================
+function renderAuditTab() {
+  const container = document.getElementById("auditList");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const selisihList = allPelayaran.filter(p => p.status_selisih !== "SESUAI");
+
+  if (selisihList.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="grid-column: 1/-1; text-align: center; padding: 3.5rem 1rem;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎉</div>
+        <div style="font-weight: 800; font-size: 1.05rem; color: var(--success-text); margin-bottom: 0.25rem;">Seluruh Muatan Fisik SESUAI</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Tidak ditemukan selisih antara manifest perhitungan dan fisik pada kapal pelayaran.</div>
+      </div>
+    `;
+    return;
+  }
+
+  selisihList.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.style.borderLeft = "4px solid var(--warning-text)";
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-title">${p.nama_kapal}</div>
+        <span class="badge-status-warn">SELISIH ⚠️</span>
+      </div>
+      <div class="card-meta-list">
+        <div>📅 <b>Tanggal:</b> ${p.tanggal || "-"}</div>
+        <div>👤 <b>Juragan:</b> ${p.juragan || "-"}</div>
+        <div>📍 <b>Lokasi Muat:</b> ${p.lokasi_muat || "DDL"}</div>
+        <div>📦 <b>Total Hitung:</b> ${formatDots(p.total_hitung)} Gabus</div>
+      </div>
+      <div class="card-footer">
+        <button class="btn-action" onclick="bukaNota('${p.kunci_unik}')" style="background: var(--warning-text); width: 100%; justify-content: center;">
+          🔍 Periksa & Edit Nota
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ==========================================
+// MODAL NOTA KONTAN CETAK (A6)
+// ==========================================
 function bukaNota(kunciUnik) {
   activeKapal = allPelayaran.find(p => p.kunci_unik === kunciUnik);
   if (!activeKapal) return;
 
-  const muatanKapal = allRincian.filter(r => {
-    const kMatch = r.kunci_unik && activeKapal.kunci_unik && 
-      r.kunci_unik.trim().toLowerCase() === activeKapal.kunci_unik.trim().toLowerCase();
-    
-    const kapalMatch = r.nama_kapal && activeKapal.nama_kapal &&
-      r.nama_kapal.trim().toLowerCase() === activeKapal.nama_kapal.trim().toLowerCase();
-    
-    const tglMatch = !r.tanggal || !activeKapal.tanggal || (r.tanggal.trim() === activeKapal.tanggal.trim());
+  const aKapal = (activeKapal.nama_kapal || "").trim().toLowerCase();
+  const aKunci = (activeKapal.kunci_unik || "").trim().toLowerCase();
+  const aTgl = (activeKapal.tanggal || "").toString().trim().toLowerCase();
+  const cleanA = aTgl.replace(/[^0-9]/g, "");
 
-    return kMatch || (kapalMatch && tglMatch);
+  const muatanKapal = allRincian.filter(r => {
+    // 1. Cocokkan kunci_unik jika keduanya ada
+    const rKunci = (r.kunci_unik || "").trim().toLowerCase();
+    if (rKunci && aKunci && rKunci === aKunci) {
+      return true;
+    }
+
+    // 2. Cocokkan nama kapal
+    const rKapal = (r.nama_kapal || "").trim().toLowerCase();
+    if (rKapal && aKapal && rKapal === aKapal) {
+      // Jika salah satu tanggal kosong, anggap cocok
+      if (!r.tanggal || !activeKapal.tanggal) return true;
+
+      const rTgl = r.tanggal.toString().trim().toLowerCase();
+      if (rTgl === aTgl) return true;
+
+      // Normalisasi angka tanggal (mengatasi format YYYY-MM-DD vs DD/MM/YYYY)
+      const cleanR = rTgl.replace(/[^0-9]/g, "");
+      if (cleanR && cleanA) {
+        if (cleanR === cleanA) return true;
+        if (cleanR.length >= 8 && cleanA.length >= 8) {
+          // Cek substring tanggal/bulan/tahun
+          if (cleanR.slice(-4) === cleanA.slice(-4)) return true;
+        }
+      }
+      return true;
+    }
+    return false;
   });
 
   notaItems = muatanKapal.map(m => {
     let ongkirTersimpan = parseDots(m.ongkir);
     let gabus = Number(m.jumlah) || 0;
     return {
-      nama: m.nama_pemilik,
+      nama: m.nama_pemilik || "Tanpa Nama",
       gabus: gabus,
       ongkir: ongkirTersimpan > 0 ? ongkirTersimpan : 0
     };
@@ -273,6 +606,11 @@ function bukaNota(kunciUnik) {
 }
 
 function tutupNota() {
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = null;
+    eksekusiSimpanOtomatis();
+  }
   document.getElementById("notaModal").classList.remove("active");
 }
 
@@ -287,14 +625,14 @@ function tambahBarisManual() {
 }
 
 function hapusBaris(idx) {
-  if (confirm("Hapus baris ini secara permanen?")) {
+  const item = notaItems[idx];
+  const nama = item ? item.nama : "baris ini";
+  if (confirm(`Hapus baris "${nama}" dari nota ini?`)) {
     const itemDihapus = notaItems[idx];
     const namaHapus = (itemDihapus.nama || "").trim().toLowerCase();
 
-    // 1. Hapus dari notaItems
     notaItems.splice(idx, 1);
 
-    // 2. Hapus langsung dari array lokal allRincian agar tidak muncul lagi saat nota di-close lalu dibuka
     allRincian = allRincian.filter(r => {
       if (r.kunci_unik === activeKapal.kunci_unik) {
         return (r.nama_pemilik || "").trim().toLowerCase() !== namaHapus;
@@ -303,11 +641,15 @@ function hapusBaris(idx) {
     });
 
     renderBlangkoNota();
-    renderSemuaMuatan(); // Sinkronkan rekap parengge
-    triggerAutoSave();   // Kirim sinyal hapus ke Google Sheets
+    renderSemuaMuatan();
+    renderDashboard();
+    triggerAutoSave();
   }
 }
 
+// ==========================================
+// RENDER BLANGKO NOTA (PRESISI CETAK A6)
+// ==========================================
 function renderBlangkoNota() {
   const printArea = document.getElementById("notaPrintArea");
 
@@ -318,12 +660,14 @@ function renderBlangkoNota() {
   } catch (e) {}
 
   let resiVal = activeKapal.resi || "1";
+  const isCompact = notaItems.length > 6;
+  const sheetClass = isCompact ? "nota-sheet compact-sheet" : "nota-sheet";
 
   let rowsHtml = "";
   if (notaItems.length === 0) {
     rowsHtml = `
       <tr>
-        <td colspan="4" style="text-align: center; color: var(--danger); padding: 8px; font-weight: 600;">
+        <td colspan="4" style="text-align: center; color: var(--danger-text); padding: 8px; font-weight: 600;">
           ⚠️ Rincian muatan kapal ini belum ada / kosong.<br>
           <small style="color: var(--text-muted); font-weight: normal;">
             Klik "+ Tambah Baris Kapal Parengge Manual" di bawah untuk menambahkan.
@@ -337,19 +681,19 @@ function renderBlangkoNota() {
         <tr>
           <td class="cell-no">${idx + 1}</td>
           <td style="padding-left: 5px;">
-            <span class="print-text text-left">${item.nama}</span>
-            <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span class="print-text text-left" id="txtPrintNama_${idx}">${item.nama}</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
               <input type="text" class="inp-nama no-print" value="${item.nama}" oninput="updateNamaItem(${idx}, this.value)" style="flex: 1;">
-              <button type="button" class="btn-del-item no-print" onclick="hapusBaris(${idx})" title="Hapus Baris">❌</button>
+              <button type="button" class="btn-del-item no-print" onclick="hapusBaris(${idx})" title="Hapus Baris">🗑️</button>
             </div>
           </td>
           <td style="text-align: center;">
-            <span class="print-text text-center">${item.gabus}</span>
+            <span class="print-text text-center" id="txtPrintGabus_${idx}">${item.gabus}</span>
             <input type="number" class="inp-gabus no-print" value="${item.gabus}" oninput="updateGabusItem(${idx}, this.value)">
           </td>
           <td style="text-align: right; padding-right: 5px;">
             <span class="print-text text-right font-bold" id="txtPrintOngkir_${idx}">${item.ongkir ? formatDots(item.ongkir) : ''}</span>
-            <input type="text" inputmode="numeric" class="inp-ongkir no-print" placeholder="0" value="${formatDots(item.ongkir)}" oninput="handleOngkirInput(${idx}, this)">
+            <input type="text" inputmode="numeric" class="inp-ongkir no-print" placeholder="0" value="${item.ongkir ? formatDots(item.ongkir) : ''}" oninput="handleOngkirInput(${idx}, this)">
           </td>
         </tr>
       `;
@@ -359,26 +703,18 @@ function renderBlangkoNota() {
   let totalGabusFisik = 0;
   notaItems.forEach(i => totalGabusFisik += Number(i.gabus) || 0);
 
-  // TATA LETAK BARU:
-  // Judul NOTA ONGKIR MUATAN KAPAL di atas
-  // Tabel Info:
-  // Baris 1: Kapal Pengangkut (kiri) | Tanggal (kanan)
-  // Baris 2: Juragan (kiri)          | Res (kanan)
-  // Baris 3: Lokasi Muat (kiri)      | (kosong)
   printArea.innerHTML = `
-    <div class="nota-sheet">
-      <!-- Baris Header 1 Baris: Res (Kiri) | NOTA ONGKIR (Tengah) | Tanggal (Kanan) -->
+    <div class="${sheetClass}">
       <div class="nota-header-top">
         <div class="resi-wrap">
           <span>Res</span>
-          <span class="print-text print-resi-box">${resiVal}</span>
+          <span class="print-text print-resi-box" id="txtPrintResi">${resiVal}</span>
           <input type="text" class="resi-input no-print" id="inpResi" value="${resiVal}" oninput="handleResiInput(this.value)">
         </div>
         <div class="nota-header-title">NOTA ONGKIR</div>
         <div class="nota-header-date">${tglStr}</div>
       </div>
 
-      <!-- Rincian Pelayaran Vertikal Rapi -->
       <table class="info-table">
         <tr>
           <td class="lbl">Kapal Pengangkut</td>
@@ -397,7 +733,6 @@ function renderBlangkoNota() {
         </tr>
       </table>
 
-      <!-- Tabel Muatan (Proporsi Baku: 22px, 43%, 22%, 29%) -->
       <table class="items-table">
         <colgroup>
           <col style="width: 22px;">
@@ -421,7 +756,7 @@ function renderBlangkoNota() {
             <td colspan="2" rowspan="3" class="calc-side-left">
               <div class="t-label">SISA BERSIH JURAGAN</div>
               <div class="t-amount" id="txtBigBersih">0</div>
-              <div class="t-gabus">Total: <b>${totalGabusFisik} Gabus</b></div>
+              <div class="t-gabus" id="txtTotalGabusNota">Total: <b>${totalGabusFisik} Gabus</b></div>
             </td>
             <td class="lbl-calc">Subtotal:</td>
             <td class="val-calc" id="txtSubtotal">0</td>
@@ -440,17 +775,44 @@ function renderBlangkoNota() {
         </tfoot>
       </table>
 
-      <!-- Tanda Tangan Tunggal Dg Sila -->
       <div class="sig-section">
         <div class="sig-box">
           <div class="sig-title">Hormat kami,</div>
-          <div class="sig-name">Dg Sila</div>
+          <div class="sig-line">Dg Sila</div>
         </div>
       </div>
     </div>
   `;
 
   hitungNota();
+}
+
+// ==========================================
+// LIVE SYNC INPUT KE CETAK & AUTOSAVE
+// ==========================================
+function updateNamaItem(idx, val) {
+  if (!notaItems[idx]) return;
+  notaItems[idx].nama = val;
+  const printEl = document.getElementById(`txtPrintNama_${idx}`);
+  if (printEl) printEl.textContent = val;
+  triggerAutoSave();
+}
+
+function updateGabusItem(idx, val) {
+  if (!notaItems[idx]) return;
+  const num = Number(val) || 0;
+  notaItems[idx].gabus = num;
+
+  const printEl = document.getElementById(`txtPrintGabus_${idx}`);
+  if (printEl) printEl.textContent = num;
+
+  let totalGabusFisik = 0;
+  notaItems.forEach(i => totalGabusFisik += Number(i.gabus) || 0);
+  const elGabus = document.getElementById("txtTotalGabusNota");
+  if (elGabus) elGabus.innerHTML = `Total: <b>${totalGabusFisik} Gabus</b>`;
+
+  hitungNota();
+  triggerAutoSave();
 }
 
 function handleOngkirInput(idx, inputEl) {
@@ -479,24 +841,9 @@ function handlePotonganNominalInput(inputEl) {
 
 function handleResiInput(val) {
   if (activeKapal) activeKapal.resi = val;
-  const printResi = document.querySelector(".print-resi-box");
+  const printResi = document.getElementById("txtPrintResi") || document.querySelector(".print-resi-box");
   if (printResi) printResi.textContent = val;
   triggerAutoSave();
-}
-
-function updateNamaItem(idx, val) {
-  notaItems[idx].nama = val;
-  triggerAutoSave();
-}
-
-function updateGabusItem(idx, val) {
-  notaItems[idx].gabus = Number(val) || 0;
-  hitungNota();
-  triggerAutoSave();
-}
-
-function formatRp(n) {
-  return new Intl.NumberFormat("id-ID").format(Math.round(n));
 }
 
 function hitungNota() {
@@ -513,6 +860,9 @@ function hitungNota() {
   if (elBig) elBig.textContent = formatRp(bersih);
 }
 
+// ==========================================
+// AUTOSAVE LOGIC & NOTIFIKASI STATUS
+// ==========================================
 function updateSaveIndicator(status) {
   const el = document.getElementById("saveIndicator");
   if (!el) return;
@@ -536,6 +886,7 @@ function triggerAutoSave() {
   updateSaveIndicator("typing");
   if (autoSaveTimer) clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(() => {
+    autoSaveTimer = null;
     eksekusiSimpanOtomatis();
   }, 800);
 }
@@ -544,35 +895,67 @@ async function eksekusiSimpanOtomatis() {
   const url = localStorage.getItem("GAS_WEBHOOK_URL");
   if (!url || !activeKapal) return;
 
+  // Keamanan: Mencegah eksekusi simpan jika rincian nota kosong agar tidak menghapus database
+  if (!notaItems || notaItems.length === 0) {
+    console.warn("Penyimpanan dicegah: notaItems kosong agar data di spreadsheet tidak terhapus.");
+    updateSaveIndicator("saved");
+    return;
+  }
+
   let sub = 0;
   notaItems.forEach(i => sub += Number(i.ongkir) || 0);
   const bersih = sub - (potonganNominal || 0);
   const resiVal = document.getElementById("inpResi") ? document.getElementById("inpResi").value : "1";
+
+  // Kirim data dengan kedua format penamaan (nama/nama_pemilik, gabus/jumlah)
+  // agar Apps Script mengenali field apapun tanpa membuat kolom kosong
+  const formattedItems = notaItems.map(item => ({
+    nama: item.nama || "Tanpa Nama",
+    nama_pemilik: item.nama || "Tanpa Nama",
+    gabus: Number(item.gabus) || 0,
+    jumlah: Number(item.gabus) || 0,
+    satuan: "Gabus",
+    ongkir: Number(item.ongkir) || 0,
+    kunci_unik: activeKapal.kunci_unik,
+    tanggal: activeKapal.tanggal,
+    nama_kapal: activeKapal.nama_kapal
+  }));
 
   const payload = {
     aksi: "SIMPAN_NOTA",
     kunci_unik: activeKapal.kunci_unik,
     tanggal: activeKapal.tanggal,
     nama_kapal: activeKapal.nama_kapal,
+    juragan: activeKapal.juragan || "",
+    lokasi_muat: activeKapal.lokasi_muat || "DDL",
+    total_hitung: activeKapal.total_hitung || 0,
+    status_selisih: activeKapal.status_selisih || "SESUAI",
     resi: resiVal,
     subtotal: sub,
+    subtotal_ongkir: sub,
     potongan: potonganNominal,
     total_bersih: bersih,
-    items: notaItems
+    items: formattedItems
   };
 
   try {
-    await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       body: JSON.stringify(payload)
     });
+
+    let resJson = null;
+    try { resJson = await res.json(); } catch (_) {}
+
+    if (resJson && resJson.status === "gagal") {
+      throw new Error(resJson.pesan || "Server merespon gagal");
+    }
 
     activeKapal.subtotal_ongkir = sub;
     activeKapal.potongan = potonganNominal;
     activeKapal.total_bersih = bersih;
     activeKapal.resi = resiVal;
 
-    // Sinkronkan state lokal allRincian: Hapus yang tidak ada di notaItems
     allRincian = allRincian.filter(r => {
       if (r.kunci_unik === activeKapal.kunci_unik) {
         return notaItems.some(ni => (ni.nama || "").trim().toLowerCase() === (r.nama_pemilik || "").trim().toLowerCase());
@@ -580,7 +963,6 @@ async function eksekusiSimpanOtomatis() {
       return true;
     });
 
-    // Update atau tambah item baru ke state lokal
     notaItems.forEach(nItem => {
       let found = allRincian.find(r => 
         (r.kunci_unik === activeKapal.kunci_unik && (r.nama_pemilik || "").trim().toLowerCase() === (nItem.nama || "").trim().toLowerCase())
@@ -601,7 +983,14 @@ async function eksekusiSimpanOtomatis() {
       }
     });
 
+    try {
+      localStorage.setItem("CACHE_PELAYARAN", JSON.stringify(allPelayaran));
+      localStorage.setItem("CACHE_RINCIAN", JSON.stringify(allRincian));
+    } catch (_) {}
+
+    renderDashboard();
     renderSemuaMuatan();
+    renderAuditTab();
     updateSaveIndicator("saved");
   } catch (err) {
     console.error("Gagal simpan otomatis:", err);
@@ -609,26 +998,66 @@ async function eksekusiSimpanOtomatis() {
   }
 }
 
+// ==========================================
+// SWITCH TAB NAVIGATION (NAVBAR & BOTTOM NAV)
+// ==========================================
 function switchTab(tabName, el) {
-  document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
-  el.classList.add('active');
+  currentTab = tabName;
 
+  // 1. Update Desktop Navbar link active state
+  document.querySelectorAll('.navbar-nav .nav-link').forEach(link => link.classList.remove('active'));
+  const desktopNavMap = {
+    dashboard: document.getElementById("navTabDashboard"),
+    kapal: document.getElementById("navTabKapal"),
+    muatan: document.getElementById("navTabMuatan"),
+    audit: document.getElementById("navTabAudit"),
+    setting: document.getElementById("navTabSetting")
+  };
+  if (desktopNavMap[tabName]) {
+    desktopNavMap[tabName].classList.add('active');
+  }
+
+  // 2. Update Mobile Bottom Nav active state
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(item => item.classList.remove('active'));
+  const mobileNavMap = {
+    dashboard: document.getElementById("bottomTabDashboard"),
+    kapal: document.getElementById("bottomTabKapal"),
+    muatan: document.getElementById("bottomTabMuatan"),
+    audit: document.getElementById("bottomTabAudit"),
+    setting: document.getElementById("bottomTabSetting")
+  };
+  if (mobileNavMap[tabName]) {
+    mobileNavMap[tabName].classList.add('active');
+  }
+
+  // 3. Tampilkan Tab yang Sesuai
+  const tabDashboard = document.getElementById("tabDashboard");
   const tabKapal = document.getElementById("tabKapal");
   const tabMuatan = document.getElementById("tabMuatan");
+  const tabAudit = document.getElementById("tabAudit");
   const tabSetting = document.getElementById("tabSetting");
-  const searchWrap = document.getElementById("searchBarWrap");
 
-  tabKapal.style.display = "none";
-  tabMuatan.style.display = "none";
-  tabSetting.style.display = "none";
-  searchWrap.style.display = "none";
+  if (tabDashboard) tabDashboard.style.display = "none";
+  if (tabKapal) tabKapal.style.display = "none";
+  if (tabMuatan) tabMuatan.style.display = "none";
+  if (tabAudit) tabAudit.style.display = "none";
+  if (tabSetting) tabSetting.style.display = "none";
 
-  if (tabName === 'kapal') {
-    tabKapal.style.display = "block";
-    searchWrap.style.display = "block";
+  if (tabName === 'dashboard') {
+    if (tabDashboard) tabDashboard.style.display = "block";
+    renderDashboard();
+  } else if (tabName === 'kapal') {
+    if (tabKapal) tabKapal.style.display = "block";
+    filterData();
   } else if (tabName === 'muatan') {
-    tabMuatan.style.display = "block";
+    if (tabMuatan) tabMuatan.style.display = "block";
+    renderSemuaMuatan();
+  } else if (tabName === 'audit') {
+    if (tabAudit) tabAudit.style.display = "block";
+    renderAuditTab();
   } else if (tabName === 'setting') {
-    tabSetting.style.display = "block";
+    if (tabSetting) tabSetting.style.display = "block";
   }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
