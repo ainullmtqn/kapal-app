@@ -14,7 +14,6 @@ let currentChartRangeDays = 7;
 // ==========================================
 // FITUR KEAMANAN OPERASIONAL & PROTEKSI DATA
 // ==========================================
-let isEditLocked = true;          // Proteksi Layar Sentuh Default: TERKUNCI (Aman)
 let lastSyncTimestamp = 0;        // Anti-Spam Rate Limiter Cooldown
 let isWebhookLocked = true;       // Kunci URL Webhook
 let isWebhookVisible = false;     // Masking Sandi Webhook
@@ -1088,87 +1087,7 @@ function renderAuditTab() {
 
 // ==========================================
 // MODAL NOTA KONTAN CETAK (A6)
-// DILENGKAPI PROTEKSI EDIT LAYAR SENTUH (SAFE-LOCK)
 // ==========================================
-function toggleEditLock() {
-  isEditLocked = !isEditLocked;
-  updateLockUI();
-  if (isEditLocked) {
-    showSecurityToast("🔒 Proteksi Aktif: Data nota aman dari sentuhan tak sengaja.");
-  } else {
-    showSecurityToast("🔓 Mode Edit Terbuka: Rincian nota dapat diubah.");
-  }
-}
-
-function updateLockUI() {
-  const btn = document.getElementById("btnLockToggle");
-  const icon = document.getElementById("lockToggleIcon");
-  const text = document.getElementById("lockToggleText");
-  const banner = document.getElementById("lockNoticeBanner");
-  const printArea = document.getElementById("notaPrintArea");
-  const addWrap = document.getElementById("btnTambahBarisManualWrap");
-
-  if (isEditLocked) {
-    if (btn) {
-      btn.className = "btn-lock-toggle is-locked";
-      if (icon) icon.textContent = "🔒";
-      if (text) text.textContent = "Terkunci (Aman)";
-      btn.title = "Klik untuk membuka kunci edit rincian";
-    }
-    if (banner) {
-      banner.className = "lock-notice-banner no-print";
-      banner.innerHTML = `
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-        <span><strong>Proteksi Layar Sentuh Aktif:</strong> Data aman dari sentuhan tak sengaja di pelabuhan. Klik tombol <strong>Buka Kunci</strong> di atas untuk mengedit.</span>
-      `;
-    }
-    if (printArea) printArea.classList.add("nota-table-locked");
-    if (addWrap) addWrap.style.display = "none";
-
-    if (printArea) {
-      printArea.querySelectorAll("input").forEach(inp => {
-        inp.readOnly = true;
-      });
-    }
-    const inpResi = document.getElementById("inpResi");
-    if (inpResi) inpResi.readOnly = true;
-    const inpPot = document.getElementById("inpPotonganNom");
-    if (inpPot) inpPot.readOnly = true;
-  } else {
-    if (btn) {
-      btn.className = "btn-lock-toggle is-unlocked";
-      if (icon) icon.textContent = "🔓";
-      if (text) text.textContent = "Buka Kunci";
-      btn.title = "Klik untuk mengunci kembali proteksi layar sentuh";
-    }
-    if (banner) {
-      banner.className = "lock-notice-banner is-unlocked no-print";
-      banner.innerHTML = `
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
-        </svg>
-        <span><strong>Mode Edit Aktif:</strong> Anda dapat mengubah nama parengge, muatan gabus, dan potongan. Kunci kembali jika selesai.</span>
-      `;
-    }
-    if (printArea) printArea.classList.remove("nota-table-locked");
-    if (addWrap) addWrap.style.display = "block";
-
-    if (printArea) {
-      printArea.querySelectorAll("input").forEach(inp => {
-        inp.readOnly = false;
-      });
-    }
-    const inpResi = document.getElementById("inpResi");
-    if (inpResi) inpResi.readOnly = false;
-    const inpPot = document.getElementById("inpPotonganNom");
-    if (inpPot) inpPot.readOnly = false;
-  }
-}
-
 function bukaNota(kunciUnik) {
   activeKapal = allPelayaran.find(p => p.kunci_unik === kunciUnik);
   if (!activeKapal) return;
@@ -1220,10 +1139,7 @@ function bukaNota(kunciUnik) {
 
   potonganNominal = parseDots(activeKapal.potongan) || 0;
 
-  // Keamanan Operasional: Default SELALU terkunci saat dibuka
-  isEditLocked = true;
   renderBlangkoNota();
-  updateLockUI();
   updateSaveIndicator("saved");
   document.getElementById("notaModal").classList.add("active");
 }
@@ -1238,29 +1154,19 @@ function tutupNota() {
 }
 
 function tambahBarisManual() {
-  if (isEditLocked) {
-    showSecurityToast("🔒 Buka kunci edit terlebih dahulu untuk menambah baris!");
-    return;
-  }
   notaItems.push({
     nama: "Kapal Parengge Baru",
     gabus: 1,
     ongkir: 0
   });
   renderBlangkoNota();
-  updateLockUI();
   triggerAutoSave();
-  showSecurityToast("Baris kapal parengge manual ditambahkan.");
 }
 
 function hapusBaris(idx) {
-  if (isEditLocked) {
-    showSecurityToast("🔒 Buka kunci edit terlebih dahulu untuk menghapus baris!");
-    return;
-  }
   const item = notaItems[idx];
   const nama = item ? item.nama : "baris ini";
-  if (confirm(`Peringatan Keamanan: Hapus baris "${nama}" dari nota ini?`)) {
+  if (confirm(`Peringatan: Hapus baris "${nama}" dari nota ini?`)) {
     const itemDihapus = notaItems[idx];
     const namaHapus = (itemDihapus.nama || "").trim().toLowerCase();
 
@@ -1274,7 +1180,6 @@ function hapusBaris(idx) {
     });
 
     renderBlangkoNota();
-    updateLockUI();
     renderSemuaMuatan();
     renderDashboard();
     triggerAutoSave();
@@ -1306,7 +1211,7 @@ function renderBlangkoNota() {
         <td colspan="4" style="text-align: center; color: var(--danger-text); padding: 8px; font-weight: 600;">
           ⚠️ Rincian muatan kapal ini belum ada / kosong.<br>
           <small style="color: var(--text-muted); font-weight: normal;">
-            Klik "Buka Kunci" lalu "+ Tambah Baris Kapal Parengge Manual" di bawah untuk menambahkan.
+            Klik "+ Tambah Baris Kapal Parengge Manual" di bawah untuk menambahkan.
           </small>
         </td>
       </tr>
@@ -1320,17 +1225,17 @@ function renderBlangkoNota() {
           <td style="padding-left: 5px;">
             <span class="print-text text-left" id="txtPrintNama_${idx}">${safeNama}</span>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
-              <input type="text" class="inp-nama no-print" value="${safeNama}" oninput="updateNamaItem(${idx}, this.value)" style="flex: 1;" ${isEditLocked ? 'readonly' : ''}>
+              <input type="text" class="inp-nama no-print" value="${safeNama}" oninput="updateNamaItem(${idx}, this.value)" style="flex: 1;">
               <button type="button" class="btn-del-item no-print" onclick="hapusBaris(${idx})" title="Hapus Baris">🗑️</button>
             </div>
           </td>
           <td style="text-align: center;">
             <span class="print-text text-center" id="txtPrintGabus_${idx}">${item.gabus}</span>
-            <input type="number" class="inp-gabus no-print" value="${item.gabus}" oninput="updateGabusItem(${idx}, this.value)" ${isEditLocked ? 'readonly' : ''}>
+            <input type="number" class="inp-gabus no-print" value="${item.gabus}" oninput="updateGabusItem(${idx}, this.value)">
           </td>
           <td style="text-align: right; padding-right: 5px;">
             <span class="print-text text-right font-bold" id="txtPrintOngkir_${idx}">${item.ongkir ? formatDots(item.ongkir) : ''}</span>
-            <input type="text" inputmode="numeric" class="inp-ongkir no-print" placeholder="0" value="${item.ongkir ? formatDots(item.ongkir) : ''}" oninput="handleOngkirInput(${idx}, this)" ${isEditLocked ? 'readonly' : ''}>
+            <input type="text" inputmode="numeric" class="inp-ongkir no-print" placeholder="0" value="${item.ongkir ? formatDots(item.ongkir) : ''}" oninput="handleOngkirInput(${idx}, this)">
           </td>
         </tr>
       `;
@@ -1346,7 +1251,7 @@ function renderBlangkoNota() {
         <div class="resi-wrap">
           <span>Res</span>
           <span class="print-text print-resi-box" id="txtPrintResi">${resiVal}</span>
-          <input type="text" class="resi-input no-print" id="inpResi" value="${resiVal}" oninput="handleResiInput(this.value)" ${isEditLocked ? 'readonly' : ''}>
+          <input type="text" class="resi-input no-print" id="inpResi" value="${resiVal}" oninput="handleResiInput(this.value)">
         </div>
         <div class="nota-header-title">
           <div class="nota-title-brand-row">
@@ -1407,7 +1312,7 @@ function renderBlangkoNota() {
             <td class="lbl-calc">Potongan:</td>
             <td class="val-calc">
               <span class="print-text text-right font-bold" id="txtPrintPotongan">${potonganNominal ? formatDots(potonganNominal) : ''}</span>
-              <input type="text" id="inpPotonganNom" inputmode="numeric" class="inp-potongan no-print" placeholder="0" value="${potonganNominal ? formatDots(potonganNominal) : ''}" oninput="handlePotonganNominalInput(this)" ${isEditLocked ? 'readonly' : ''}>
+              <input type="text" id="inpPotonganNom" inputmode="numeric" class="inp-potongan no-print" placeholder="0" value="${potonganNominal ? formatDots(potonganNominal) : ''}" oninput="handlePotonganNominalInput(this)">
             </td>
           </tr>
           <tr style="background:#f4f4f4;">
@@ -1427,15 +1332,13 @@ function renderBlangkoNota() {
   `;
 
   hitungNota();
-  updateLockUI();
 }
 
 // ==========================================
 // LIVE SYNC INPUT KE CETAK & AUTOSAVE
-// DILENGKAPI GUARD KUNCI EDIT (TOUCH-SAFE)
 // ==========================================
 function updateNamaItem(idx, val) {
-  if (isEditLocked || !notaItems[idx]) return;
+  if (!notaItems[idx]) return;
   notaItems[idx].nama = val;
   const printEl = document.getElementById(`txtPrintNama_${idx}`);
   if (printEl) printEl.textContent = val;
@@ -1443,7 +1346,7 @@ function updateNamaItem(idx, val) {
 }
 
 function updateGabusItem(idx, val) {
-  if (isEditLocked || !notaItems[idx]) return;
+  if (!notaItems[idx]) return;
   const num = Number(val) || 0;
   notaItems[idx].gabus = num;
 
@@ -1460,7 +1363,7 @@ function updateGabusItem(idx, val) {
 }
 
 function handleOngkirInput(idx, inputEl) {
-  if (isEditLocked || !notaItems[idx]) return;
+  if (!notaItems[idx]) return;
   let num = parseDots(inputEl.value);
   inputEl.value = num ? formatDots(num) : "";
   notaItems[idx].ongkir = num;
@@ -1473,7 +1376,6 @@ function handleOngkirInput(idx, inputEl) {
 }
 
 function handlePotonganNominalInput(inputEl) {
-  if (isEditLocked) return;
   let num = parseDots(inputEl.value);
   inputEl.value = num ? formatDots(num) : "";
   potonganNominal = num;
@@ -1486,7 +1388,7 @@ function handlePotonganNominalInput(inputEl) {
 }
 
 function handleResiInput(val) {
-  if (isEditLocked || !activeKapal) return;
+  if (!activeKapal) return;
   activeKapal.resi = val;
   const printResi = document.getElementById("txtPrintResi") || document.querySelector(".print-resi-box");
   if (printResi) printResi.textContent = val;
