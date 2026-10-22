@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
       allPelayaran = JSON.parse(cachedPel) || [];
       allRincian = JSON.parse(cachedRin) || [];
       if (allPelayaran.length > 0) {
-        updateStatusBadge("cache", `● Cache (${allPelayaran.length} Kapal)`);
+        updateStatusBadge("cache", "Cache", ` (${allPelayaran.length} Kapal)`);
         renderDashboard();
         filterData();
         renderSemuaMuatan();
@@ -89,29 +89,26 @@ document.addEventListener("DOMContentLoaded", () => {
   if (savedWebhook) {
     tarikSemuaData();
   } else if (allPelayaran.length === 0) {
-    updateStatusBadge("offline", "● Webhook Belum Diatur");
+    updateStatusBadge("offline", "Belum Diatur");
   }
 });
 
-function updateStatusBadge(status, text) {
+function updateStatusBadge(status, text, countText = "") {
   const badge = document.getElementById("statusBadge");
   const badgeText = document.getElementById("statusBadgeText");
+  const badgeCount = document.getElementById("statusBadgeCount");
+  const radarDot = document.getElementById("radarDot");
   if (!badge || !badgeText) return;
 
   badgeText.textContent = text;
+  if (badgeCount) {
+    badgeCount.textContent = countText;
+  }
   
-  if (status === "online") {
-    badge.style.background = "var(--success-bg)";
-    badge.style.borderColor = "var(--success-border)";
-    badge.style.color = "var(--success-text)";
-  } else if (status === "loading") {
-    badge.style.background = "var(--primary-light)";
-    badge.style.borderColor = "#bfdbfe";
-    badge.style.color = "var(--primary)";
-  } else {
-    badge.style.background = "var(--warning-bg)";
-    badge.style.borderColor = "var(--warning-border)";
-    badge.style.color = "var(--warning-text)";
+  // Set class agar styling CSS rapi dan responsif
+  badge.className = `status-badge status-${status}`;
+  if (radarDot) {
+    radarDot.className = `radar-dot dot-${status}`;
   }
 }
 
@@ -147,7 +144,7 @@ async function tarikSemuaData() {
         console.warn("Penyimpanan cache gagal:", cacheErr);
       }
       
-      updateStatusBadge("online", `● Online (${allPelayaran.length} Kapal)`);
+      updateStatusBadge("online", "Online", ` (${allPelayaran.length} Kapal)`);
       if (document.getElementById("countMuatan")) {
         document.getElementById("countMuatan").textContent = allRincian.length;
       }
@@ -157,15 +154,15 @@ async function tarikSemuaData() {
       renderSemuaMuatan();
       renderAuditTab();
     } else {
-      updateStatusBadge("offline", "● Kendala Spreadsheet");
+      updateStatusBadge("offline", "Kendala DB");
       alert("Gagal membaca database: " + (data.pesan || "Terjadi kesalahan"));
     }
   } catch (e) {
     console.error("Gagal menarik data:", e);
     if (allPelayaran.length > 0) {
-      updateStatusBadge("offline", `● Offline (Data Cache)`);
+      updateStatusBadge("offline", "Offline", " (Cache)");
     } else {
-      updateStatusBadge("offline", "● Offline / Jaringan");
+      updateStatusBadge("offline", "Offline");
     }
   }
 }

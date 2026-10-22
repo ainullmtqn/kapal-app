@@ -87,9 +87,10 @@
           </svg>
           <span id="currentDateDisplay">Memuat...</span>
         </div>
-        <div class="status-badge" id="statusBadge">
-          <span class="radar-dot"></span>
+        <div class="status-badge status-online" id="statusBadge" onclick="tarikSemuaData()" title="Status koneksi database. Klik untuk segarkan.">
+          <span class="radar-dot dot-online" id="radarDot"></span>
           <span id="statusBadgeText">Online</span>
+          <span class="status-badge-count" id="statusBadgeCount"></span>
         </div>
         <button class="btn-refresh" onclick="tarikSemuaData()" title="Segarkan Data" id="btnRefresh">
           <svg class="refresh-svg-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
@@ -113,7 +114,7 @@
       <div class="kpi-grid">
         <div class="kpi-card" onclick="switchTab('kapal')" style="cursor: pointer;" title="Buka Database Pelayaran Kapal">
           <div class="kpi-header">
-            <span class="kpi-label">Kapal Berlayar</span>
+            <span class="kpi-label">Kapal Ongkir</span>
             <div class="kpi-icon-box">🚢</div>
           </div>
           <div class="kpi-value" id="kpiKapalOnline">0 Kapal</div>
