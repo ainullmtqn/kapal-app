@@ -1,20 +1,29 @@
 /* ============================================================== */
-/* DESAIN PROFESIONAL LOGISTIK KAPAL (CLEAN, MODERN & RESPONSIF)  */
+/* DESAIN PROFESIONAL PARENGGEKITA (HARMONISASI LOGO & MODERN)   */
 /* ============================================================== */
 :root {
-  --primary: #1e40af;         /* Biru Navy Maritim */
-  --primary-hover: #1d4ed8;
-  --primary-light: #eff6ff;
+  /* Harmonisasi Identitas Warna Logo PARENGGEKITA */
+  --primary: #0c2340;           /* Midnight Navy Maritim (Layar Utama & Teks PARENGGE) */
+  --primary-hover: #16365c;
+  --primary-light: #eef4fb;     /* Biru bahari sejuk transparan */
   
-  --bg-main: #f8fafc;         /* Background bersih abu-abu lembut */
-  --bg-surface: #ffffff;      /* Warna kartu putih bersih */
+  --ocean: #3888cc;             /* Biru Samudra (Lambung Kapal / Ombak Bawah Logo) */
+  --ocean-hover: #2974b3;
+  --ocean-light: #e6f1fb;
+  --ocean-glow: rgba(56, 136, 204, 0.25);
+
+  --slate-silver: #788496;      /* Perak / Abu-abu Maritim (Layar Kiri & Teks KITA) */
+  --slate-silver-light: #f1f4f8;
+
+  --bg-main: #f5f8fc;           /* Background bersih dengan nuansa maritim sejuk */
+  --bg-surface: #ffffff;        /* Kartu putih bersih */
   
-  --text-primary: #0f172a;    /* Teks utama gelap mudah dibaca */
-  --text-secondary: #334155;  /* Teks sekunder */
-  --text-muted: #64748b;      /* Keterangan */
+  --text-primary: #0c2340;      /* Teks utama navy gelap tajam */
+  --text-secondary: #334155;    /* Teks sekunder */
+  --text-muted: #64748b;        /* Keterangan */
   
-  --border: #e2e8f0;          /* Garis batas halus */
-  --border-focus: #3b82f6;
+  --border: #dde5ed;            /* Garis batas halus bernuansa maritim */
+  --border-focus: #3888cc;
   
   --success-bg: #dcfce7;
   --success-text: #166534;
@@ -28,9 +37,9 @@
   --danger-text: #991b1b;
   --danger-border: #fca5a5;
   
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-  --shadow-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 2px 0 rgba(12, 35, 64, 0.05);
+  --shadow-card: 0 1px 3px 0 rgba(12, 35, 64, 0.06), 0 1px 2px -1px rgba(12, 35, 64, 0.04);
+  --shadow-hover: 0 8px 18px -2px rgba(12, 35, 64, 0.1), 0 3px 6px -2px rgba(12, 35, 64, 0.05);
   
   --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
@@ -47,7 +56,27 @@ html, body {
   background-color: var(--bg-main);
   color: var(--text-primary);
   min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden; /* Mencegah overflow horizontal yang memunculkan scrollbar di Windows/HP */
   -webkit-font-smoothing: antialiased;
+}
+
+/* Sembunyikan scrollbar visual secara menyeluruh di semua perangkat */
+html, body, * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+  display: none !important;
+  background: transparent !important;
 }
 
 /* ============================================================== */
@@ -59,17 +88,20 @@ html, body {
   position: sticky;
   top: 0;
   z-index: 40;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 6px rgba(12, 35, 64, 0.04);
+  width: 100%;
 }
 
 .navbar-container {
-  max-width: 1200px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 2.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 1.25rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .navbar-brand {
@@ -79,55 +111,81 @@ html, body {
   text-decoration: none;
   cursor: pointer;
   user-select: none;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .navbar-brand:hover {
-  opacity: 0.9;
+  opacity: 0.92;
+  transform: translateY(-1px);
 }
 
-.brand-icon {
-  width: 38px;
-  height: 38px;
-  background: var(--primary);
-  color: #fff;
-  border-radius: 9px;
+.brand-logo-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
   flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+  box-shadow: 0 2px 8px rgba(12, 35, 64, 0.08);
+  border: 1px solid rgba(56, 136, 204, 0.22);
+  padding: 3px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 7px;
+}
+
+.brand-text-wrap {
+  display: flex;
+  flex-direction: column;
 }
 
 .brand-title {
-  font-size: 1.05rem;
+  font-size: 1.12rem;
   font-weight: 800;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
+  color: var(--primary);
+  letter-spacing: 0.02em;
   line-height: 1.15;
+}
+
+.brand-title-accent {
+  color: var(--slate-silver);
+  font-weight: 700;
+}
+
+.brand-title-dot {
+  color: var(--ocean);
+  font-weight: 900;
 }
 
 .brand-subtitle {
   font-size: 0.7rem;
   color: var(--text-muted);
   font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 /* Nav Tabs Desktop */
 .navbar-nav {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.25rem;
 }
 
 .nav-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.5rem 0.95rem;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
   border-radius: 8px;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
@@ -145,7 +203,8 @@ html, body {
   background: var(--primary-light);
   color: var(--primary);
   font-weight: 700;
-  border-color: #bfdbfe;
+  border-color: rgba(56, 136, 204, 0.35);
+  box-shadow: 0 1px 3px rgba(12, 35, 64, 0.05);
 }
 
 .badge-count {
@@ -162,31 +221,42 @@ html, body {
 .navbar-right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.65rem;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-right: 0.25rem;
 }
 
 .date-pill {
-  font-size: 0.74rem;
+  font-size: 0.73rem;
   font-weight: 600;
   color: var(--text-muted);
   background: #f8fafc;
-  padding: 0.35rem 0.65rem;
+  padding: 0.32rem 0.6rem;
   border-radius: 6px;
   border: 1px solid var(--border);
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-pill .pill-svg {
+  stroke: var(--ocean);
+  flex-shrink: 0;
 }
 
 .status-badge {
-  font-size: 0.74rem;
+  font-size: 0.73rem;
   font-weight: 700;
-  padding: 0.35rem 0.65rem;
+  padding: 0.32rem 0.65rem;
   border-radius: 6px;
   background: var(--success-bg);
   color: var(--success-text);
   border: 1px solid var(--success-border);
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   white-space: nowrap;
 }
 
@@ -194,31 +264,49 @@ html, body {
   background: #ffffff;
   border: 1px solid var(--border);
   color: var(--text-secondary);
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
-  transition: all 0.15s;
+  transition: all 0.2s ease;
   flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(12, 35, 64, 0.05);
+}
+
+.btn-refresh .refresh-svg-icon {
+  stroke: var(--text-secondary);
+  transition: transform 0.35s ease, stroke 0.15s ease;
 }
 
 .btn-refresh:hover {
   background: var(--primary-light);
-  color: var(--primary);
-  border-color: var(--primary);
+  border-color: var(--ocean);
+}
+
+.btn-refresh:hover .refresh-svg-icon {
+  stroke: var(--ocean);
+  transform: rotate(60deg);
+}
+
+.btn-refresh:active .refresh-svg-icon {
+  transform: rotate(240deg);
+}
+
+.btn-icon-svg {
+  stroke: currentColor;
+  flex-shrink: 0;
 }
 
 /* ============================================================== */
 /* MAIN CONTENT CONTAINER                                         */
 /* ============================================================== */
 .main-wrapper {
-  max-width: 1200px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 5.5rem 1.5rem;
+  padding: 1.25rem 2rem 2.5rem 2rem;
 }
 
 .tab-pane {
@@ -243,6 +331,9 @@ html, body {
   padding: 1.15rem 1.25rem;
   box-shadow: var(--shadow-card);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .kpi-card:hover {
@@ -340,6 +431,224 @@ html, body {
   font-weight: 700;
   white-space: nowrap;
 }
+
+/* ============================================================== */
+/* DASHBOARD DAILY CHART (KAPAL PENGANGKUT & MUATAN GABUS)       */
+/* ============================================================== */
+.chart-section-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem 1.4rem;
+  margin-bottom: 1.6rem;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.chart-section-card:hover {
+  box-shadow: var(--shadow-hover);
+  border-color: #cbd5e1;
+}
+
+.chart-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.chart-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chart-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary-light) 0%, #e1effc 100%);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(56, 136, 204, 0.3);
+}
+
+.chart-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.chart-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-range-pills {
+  display: inline-flex;
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.chart-pill-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.chart-pill-btn:hover {
+  color: var(--primary);
+}
+
+.chart-pill-btn.active {
+  background: #ffffff;
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Mini stat summary chips */
+.chart-stat-chips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.65rem;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.95rem;
+}
+
+.stat-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-chip-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stat-chip-val {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* Legend Row */
+.chart-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  padding-right: 0.5rem;
+}
+
+.legend-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.legend-box-gabus {
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--primary) 0%, var(--ocean) 100%);
+  display: inline-block;
+}
+
+.legend-line-kapal {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  background: #ea580c;
+  display: inline-block;
+  position: relative;
+}
+
+.legend-line-kapal::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ea580c;
+  border: 1.5px solid #ffffff;
+}
+
+/* Canvas Container */
+.chart-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 320px;
+}
+
+.chart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+}
+
+.chart-empty-icon {
+  font-size: 2.25rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
+}
+
+.chart-empty-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.chart-empty-sub {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  max-width: 400px;
+}
+
 
 /* Section Header & Aligned Wrap */
 .section-header {
@@ -517,9 +826,9 @@ html, body {
 }
 
 .btn-action {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, #153866 100%);
   color: #fff;
-  border: none;
+  border: 1px solid rgba(56, 136, 204, 0.25);
   padding: 0.48rem 0.95rem;
   font-size: 0.8rem;
   font-weight: 700;
@@ -530,12 +839,14 @@ html, body {
   gap: 5px;
   transition: all 0.15s ease;
   white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(12, 35, 64, 0.15);
 }
 
 .btn-action:hover {
-  background: var(--primary-hover);
+  background: linear-gradient(135deg, var(--primary-hover) 0%, #1e4b85 100%);
   transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(30, 64, 175, 0.2);
+  box-shadow: 0 4px 10px rgba(12, 35, 64, 0.22);
+  border-color: var(--ocean);
 }
 
 .btn-action:active {
@@ -666,7 +977,7 @@ html, body {
   background: var(--primary-light);
   padding: 4px 9px;
   border-radius: 6px;
-  border: 1px solid #bfdbfe;
+  border: 1px solid rgba(56, 136, 204, 0.28);
   white-space: nowrap;
 }
 
@@ -687,6 +998,53 @@ html, body {
 /* ============================================================== */
 /* TAB SETTING                                                    */
 /* ============================================================== */
+.setting-brand-banner {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  padding: 1.15rem 1.25rem;
+  background: linear-gradient(135deg, #f0f5fb 0%, #ffffff 100%);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 1.35rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.setting-banner-logo-wrap {
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(12, 35, 64, 0.08);
+  border: 1px solid rgba(56, 136, 204, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.setting-banner-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.setting-banner-title {
+  font-size: 1.18rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.setting-banner-sub {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
 .setting-box {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -828,6 +1186,21 @@ html, body {
   text-align: center;
   width: 50%;
   color: #000;
+}
+
+.nota-title-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.nota-mini-logo {
+  height: 18px;
+  width: auto;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .nota-header-date {
@@ -1095,66 +1468,274 @@ table.items-table td {
 /* ============================================================== */
 /* BOTTOM NAVIGATION (MOBILE ONLY)                                */
 /* ============================================================== */
+/* BOTTOM NAVIGATION (MOBILE ONLY - NATURAL APP DESIGN)           */
+/* ============================================================== */
 .bottom-nav {
   display: none;
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  height: calc(56px + env(safe-area-inset-bottom, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: #ffffff;
-  border-top: 1px solid var(--border);
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+  background: #ffffff !important;
+  border-top: 1px solid rgba(226, 232, 240, 0.95) !important;
   justify-content: space-around;
-  align-items: center;
-  z-index: 50;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  align-items: stretch;
+  z-index: 9999 !important;
+  box-shadow: 0 -2px 10px rgba(12, 35, 64, 0.06);
+  box-sizing: border-box;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
-.nav-item {
+.bottom-nav .nav-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
-  font-size: 0.68rem;
-  font-weight: 700;
-  gap: 2px;
+  color: #64748b;
+  text-decoration: none;
   flex: 1;
-  padding: 6px 0;
+  height: 100%;
+  padding: 6px 0 calc(5px + env(safe-area-inset-bottom, 0px)) 0;
+  gap: 3px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.nav-item.active {
+.bottom-nav .nav-icon-wrap {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bottom-nav .nav-svg {
+  width: 20px;
+  height: 20px;
+  stroke: #64748b;
+  stroke-width: 1.85;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bottom-nav .nav-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: #64748b;
+  transition: color 0.15s ease;
+}
+
+.bottom-nav .nav-item.active {
   color: var(--primary);
 }
 
-.nav-icon {
-  font-size: 1.15rem;
+.bottom-nav .nav-item.active .nav-label {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.bottom-nav .nav-item.active .nav-svg {
+  stroke: var(--ocean);
+  stroke-width: 2.2;
+  transform: translateY(-1px);
+}
+
+.bottom-nav .nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--ocean);
+}
+
+/* Nav SVG di Desktop Navbar */
+.navbar-nav .nav-link .nav-svg {
+  width: 17px;
+  height: 17px;
+  stroke: var(--text-muted);
+  transition: stroke 0.15s ease;
+}
+
+.navbar-nav .nav-link:hover .nav-svg,
+.navbar-nav .nav-link.active .nav-svg {
+  stroke: var(--primary);
 }
 
 /* ============================================================== */
-/* RESPONSIVE BREAKPOINTS (PENYELARASAN DESKTOP & MOBILE)        */
+/* PENYESUAIAN DESKTOP, TABLET & MOBILE (PAS & PROPORSIONAL)      */
 /* ============================================================== */
-@media (max-width: 820px) {
-  /* Di Layar Tablet & Mobile: Sembunyikan Tabs Atas, Aktifkan Bottom Nav */
-  .navbar-nav {
-    display: none;
+
+/* 1. Aturan Global Desktop: Scrollbar Dihilangkan & Scroll Halus */
+@media (min-width: 769px) {
+  html, body {
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* IE dan Edge */
   }
 
-  .date-pill {
-    display: none;
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    width: 0px !important;
+    height: 0px !important;
+    display: none !important;
+    background: transparent !important;
   }
 
-  .bottom-nav {
-    display: flex;
-  }
-
-  .navbar-container {
-    padding: 0.65rem 1rem;
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
   }
 
   .main-wrapper {
-    padding: 0.85rem 0.75rem 5rem 0.75rem;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 1.35rem 2rem 3rem 2rem;
+  }
+}
+
+/* 2. Desktop Resolusi Menengah & Laptop (821px - 1340px) */
+@media (min-width: 821px) and (max-width: 1340px) {
+  .navbar-container {
+    padding: 0.65rem 1.75rem;
+    gap: 0.85rem;
+  }
+
+  .nav-link {
+    padding: 0.42rem 0.65rem;
+    font-size: 0.8rem;
+    gap: 0.35rem;
+  }
+
+  /* Sembunyikan tanggal di laptop agar nav link & status tidak mepet */
+  .date-pill {
+    display: none !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.85rem;
+  }
+
+  .kpi-card {
+    padding: 0.95rem 1rem;
+    min-height: 110px;
+  }
+
+  .kpi-value {
+    font-size: 1.35rem;
+  }
+
+  .chart-canvas-container {
+    height: 320px;
+  }
+}
+
+/* 2b. Khusus Layar Laptop Sedang (821px - 1100px) */
+@media (min-width: 821px) and (max-width: 1100px) {
+  .brand-subtitle {
+    display: none;
+  }
+  
+  .navbar-nav {
+    gap: 0.15rem;
+  }
+
+  .nav-link {
+    padding: 0.38rem 0.55rem;
+    font-size: 0.77rem;
+  }
+}
+
+/* 3. Desktop Layar Lebar (>= 1341px) */
+@media (min-width: 1341px) {
+  .date-pill {
+    display: inline-flex !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.35rem;
+  }
+
+  .kpi-card {
+    padding: 1.2rem 1.35rem;
+    min-height: 120px;
+  }
+
+  .chart-section-card {
+    padding: 1.35rem 1.6rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .chart-canvas-container {
+    height: 360px;
+  }
+
+  .chart-stat-chips {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.85rem;
+    padding: 0.85rem 1.15rem;
+  }
+
+  .search-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+
+  .search-card .search-input-wrap {
+    flex: 1;
+    max-width: 520px;
+  }
+
+  .search-card .filter-pills-wrap {
+    margin-top: 0;
+  }
+
+  .voyage-grid, .parengge-grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+/* 4. Layar Tablet & Mobile (<= 820px) */
+@media (max-width: 820px) {
+  /* Sembunyikan Navigasi Atas, Aktifkan Bottom Nav */
+  .navbar-nav {
+    display: none !important;
+  }
+
+  .date-pill {
+    display: none !important;
+  }
+
+  .bottom-nav {
+    display: flex !important;
+  }
+
+  .navbar-container {
+    padding: 0.65rem 1.15rem;
+  }
+
+  .main-wrapper {
+    padding: 0.85rem 0.85rem calc(76px + env(safe-area-inset-bottom, 0px)) 0.85rem;
   }
 
   .section-header-wrap {
@@ -1169,7 +1750,7 @@ table.items-table td {
     width: 100%;
   }
 
-  /* 4 KPI Cards Menjadi 2x2 Simetris */
+  /* 4 KPI Cards Menjadi 2x2 Simetris & Pas Tinggi */
   .kpi-grid {
     grid-template-columns: 1fr 1fr;
     gap: 0.65rem;
@@ -1178,25 +1759,93 @@ table.items-table td {
   .kpi-card {
     padding: 0.85rem 0.95rem;
     border-radius: 10px;
+    min-height: 100px;
   }
 
   .kpi-value {
-    font-size: 1.25rem;
+    font-size: clamp(1.15rem, 3.8vw, 1.35rem);
+  }
+
+  .kpi-sub {
+    font-size: 0.7rem;
+  }
+
+  .chart-section-card {
+    padding: 1rem 0.9rem;
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+  }
+
+  .chart-card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .chart-controls {
+    width: 100%;
+  }
+
+  .chart-range-pills {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .chart-pill-btn {
+    flex: 1;
+    text-align: center;
+    padding: 0.35rem 0.4rem;
+    font-size: 0.7rem;
+  }
+
+  .chart-stat-chips {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .chart-legend-row {
+    justify-content: flex-start;
+    gap: 0.75rem;
+    font-size: 0.7rem;
+  }
+
+  .chart-canvas-container {
+    height: 250px;
   }
 
   /* Grid Kartu Pelayaran 1 Kolom Rapi di Mobile */
   .voyage-grid, .parengge-grid {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 0.85rem;
   }
 
   .card, .parengge-card {
-    border-radius: 10px;
+    border-radius: 11px;
     padding: 1rem 1.1rem;
   }
 
+  .search-card {
+    padding: 0.95rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .filter-pills-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .filter-pills-wrap::-webkit-scrollbar {
+    display: none;
+  }
+
   .setting-box {
-    padding: 1.15rem;
+    padding: 1.25rem 1.15rem;
     max-width: 100%;
   }
 
@@ -1206,10 +1855,12 @@ table.items-table td {
   }
 
   .modal-content {
-    margin: 5px auto;
+    margin: 6px auto;
     padding: 0.85rem;
-    border-radius: 10px;
+    border-radius: 11px;
     max-width: 100%;
+    max-height: calc(100vh - 20px);
+    overflow-y: auto;
   }
 
   .modal-top-bar {
@@ -1219,9 +1870,26 @@ table.items-table td {
     z-index: 10;
     padding-top: 2px;
   }
+
+  #notaPrintArea {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
+/* 5. Layar HP Ringkas (<= 480px) */
 @media (max-width: 480px) {
+  .navbar-container {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .brand-logo-wrap {
+    width: 36px;
+    height: 36px;
+    padding: 2px;
+    border-radius: 8px;
+  }
+
   .brand-title {
     font-size: 0.95rem;
   }
@@ -1230,12 +1898,28 @@ table.items-table td {
     display: none;
   }
 
+  .status-badge {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0.28rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .btn-refresh {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
+  }
+
   .kpi-grid {
-    gap: 0.5rem;
+    gap: 0.55rem;
   }
 
   .kpi-card {
     padding: 0.75rem 0.85rem;
+    min-height: 94px;
   }
 
   .kpi-value {
@@ -1245,6 +1929,15 @@ table.items-table td {
   .card-footer {
     flex-direction: row;
     align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-refresh-search {
+    padding: 0.48rem 0.65rem;
+  }
+
+  .btn-refresh-search .btn-text {
+    display: none;
   }
 }
 
@@ -1277,12 +1970,21 @@ table.items-table td {
   .screen-input,
   .tab-pane,
   .kpi-grid,
-  .alert-banner {
+  .alert-banner,
+  .chart-section-card {
     display: none !important;
   }
 
   .print-text {
     display: block !important;
+  }
+
+  .nota-mini-logo {
+    height: 16px !important;
+    width: auto !important;
+    display: inline-block !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .print-text.text-left { text-align: left !important; }

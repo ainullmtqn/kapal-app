@@ -8,6 +8,8 @@ let activeKapal = null;
 let notaItems = [];
 let potonganNominal = 0;
 let autoSaveTimer = null;
+let dailyChartInstance = null;
+let currentChartRangeDays = 7;
 
 // ==========================================
 // FORMATTER ANGKA & TANGGAL
@@ -250,71 +252,352 @@ function renderDashboard() {
     if (navAuditBadge) navAuditBadge.style.display = "none";
   }
 
-  // 3. Render Pelayaran Aktif Cards
-  renderDashboardShipList();
+  // 3. Render Grafik Tren Harian Kapal & Gabus
+  renderDailyChart();
 }
 
-function setDashboardChip(type, el) {
-  document.querySelectorAll('.chips-filter-row .chip-btn').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  currentDashChip = type;
-  renderDashboardShipList();
+// ==========================================
+// GRAFIK HARIAN KAPAL PENGANGKUT & GABUS
+// ==========================================
+function normalizeDateKey(tglStr) {
+  if (!tglStr) return "";
+  tglStr = tglStr.toString().trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(tglStr)) {
+    return tglStr.substring(0, 10);
+  }
+  const dmy = tglStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (dmy) {
+    const d = dmy[1].padStart(2, '0');
+    const m = dmy[2].padStart(2, '0');
+    const y = dmy[3];
+    return `${y}-${m}-${d}`;
+  }
+  const parsed = new Date(tglStr);
+  if (!isNaN(parsed.getTime())) {
+    const yr = parsed.getFullYear();
+    const mo = String(parsed.getMonth() + 1).padStart(2, '0');
+    const da = String(parsed.getDate()).padStart(2, '0');
+    return `${yr}-${mo}-${da}`;
+  }
+  return tglStr;
 }
 
-function renderDashboardShipList() {
-  const container = document.getElementById("dashShipCardList");
-  if (!container) return;
+function formatChartDateShort(dKey) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dKey)) {
+    const [y, m, d] = dKey.split("-");
+    const dt = new Date(Number(y), Number(m) - 1, Number(d));
+    const dayArr = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+    const blnArr = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+    return `${dayArr[dt.getDay()]}, ${Number(d)} ${blnArr[dt.getMonth()]}`;
+  }
+  return dKey;
+}
 
-  const todayStr = new Date().toISOString().split("T")[0];
+function formatChartDateLong(dKey) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dKey)) {
+    const [y, m, d] = dKey.split("-");
+    const dt = new Date(Number(y), Number(m) - 1, Number(d));
+    const hariArr = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const bulanArr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    return `${hariArr[dt.getDay()]}, ${Number(d)} ${bulanArr[dt.getMonth()]} ${y}`;
+  }
+  return dKey;
+}
 
-  let displayList = allPelayaran.filter(p => {
-    if (currentDashChip === 'HARI_INI') return (p.tanggal === todayStr);
-    if (currentDashChip === 'KALMAS') {
-      const lok = (p.lokasi_muat || "").toLowerCase();
-      const nKapal = (p.nama_kapal || "").toLowerCase();
-      return lok.includes('kalmas') || lok.includes('ddc') || lok.includes('ddl') || nKapal.includes('kalmas');
+function setChartRange(days, btnEl) {
+  currentChartRangeDays = Number(days);
+  document.querySelectorAll('#chartRangePills .chart-pill-btn').forEach(btn => btn.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  renderDailyChart();
+}
+
+function updateChartMiniStats(avgKapal, avgGabus, peakGabus, totalDays) {
+  const elAvgKapal = document.getElementById("statAvgKapal");
+  const elAvgGabus = document.getElementById("statAvgGabus");
+  const elPeakGabus = document.getElementById("statPeakGabus");
+  const elTotalDays = document.getElementById("statTotalDays");
+
+  if (elAvgKapal) elAvgKapal.textContent = `${avgKapal} / hari`;
+  if (elAvgGabus) elAvgGabus.textContent = `${formatDots(avgGabus)} Gabus / hari`;
+  if (elPeakGabus) elPeakGabus.textContent = peakGabus || "-";
+  if (elTotalDays) elTotalDays.textContent = `${totalDays} Hari`;
+}
+
+function renderDailyChart() {
+  const canvas = document.getElementById("dailyShipGabusChart");
+  const emptyState = document.getElementById("chartEmptyState");
+  if (!canvas) return;
+
+  const sourceList = allPelayaran;
+
+  if (!sourceList || sourceList.length === 0) {
+    if (dailyChartInstance) {
+      dailyChartInstance.destroy();
+      dailyChartInstance = null;
     }
-    if (currentDashChip === 'PUMA') {
-      const lok = (p.lokasi_muat || "").toLowerCase();
-      const nKapal = (p.nama_kapal || "").toLowerCase();
-      return lok.includes('puma') || nKapal.includes('puma');
-    }
-    if (currentDashChip === 'SELISIH') return (p.status_selisih !== "SESUAI");
-    return true;
-  });
-
-  if (displayList.length === 0) {
-    container.innerHTML = `
-      <div class="card" style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2.5rem 1rem;">
-        Tidak ada data pelayaran yang sesuai filter "${currentDashChip}".
-      </div>
-    `;
+    canvas.style.display = "none";
+    if (emptyState) emptyState.style.display = "flex";
+    updateChartMiniStats("0", 0, "-", 0);
     return;
   }
 
-  container.innerHTML = displayList.map(p => {
-    const isOk = p.status_selisih === "SESUAI";
-    const badgeClass = isOk ? "badge-status-ok" : "badge-status-warn";
-    const badgeLabel = isOk ? "SESUAI ✓" : "SELISIH ⚠️";
+  // Agregasi harian: Jumlah kapal pengangkut dan total gabus per tanggal
+  const dateMap = {};
+  sourceList.forEach(p => {
+    const dKey = normalizeDateKey(p.tanggal);
+    if (!dKey) return;
+    if (!dateMap[dKey]) {
+      dateMap[dKey] = {
+        dateKey: dKey,
+        kapalList: [],
+        totalGabus: 0
+      };
+    }
+    dateMap[dKey].kapalList.push(p.nama_kapal || "Tanpa Nama");
+    dateMap[dKey].totalGabus += (Number(p.total_hitung) || 0);
+  });
 
-    return `
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">${p.nama_kapal}</div>
-          <span class="${badgeClass}">${badgeLabel}</span>
-        </div>
-        <div class="card-meta-list">
-          <div>📅 <b>Tanggal:</b> ${p.tanggal || "-"}</div>
-          <div>👤 <b>Juragan:</b> ${p.juragan || "-"}</div>
-          <div>📍 <b>Lokasi Muat:</b> ${p.lokasi_muat || "DDL"}</div>
-        </div>
-        <div class="card-footer">
-          <div class="card-total-box">📦 ${formatDots(p.total_hitung)} Gabus</div>
-          <button class="btn-action" onclick="bukaNota('${p.kunci_unik}')">Buka / Cetak Nota</button>
-        </div>
-      </div>
-    `;
-  }).join("");
+  let sortedDates = Object.keys(dateMap).sort();
+  if (sortedDates.length === 0) {
+    if (dailyChartInstance) {
+      dailyChartInstance.destroy();
+      dailyChartInstance = null;
+    }
+    canvas.style.display = "none";
+    if (emptyState) emptyState.style.display = "flex";
+    updateChartMiniStats("0", 0, "-", 0);
+    return;
+  }
+
+  // Filter rentang hari (7 hari, 14 hari, 30 hari, atau semua)
+  if (currentChartRangeDays > 0 && sortedDates.length > currentChartRangeDays) {
+    sortedDates = sortedDates.slice(-currentChartRangeDays);
+  }
+
+  canvas.style.display = "block";
+  if (emptyState) emptyState.style.display = "none";
+
+  const labels = sortedDates.map(dKey => formatChartDateShort(dKey));
+  const gabusData = sortedDates.map(dKey => dateMap[dKey].totalGabus);
+  const kapalData = sortedDates.map(dKey => dateMap[dKey].kapalList.length);
+  const shipNamesList = sortedDates.map(dKey => dateMap[dKey].kapalList);
+  const fullDatesList = sortedDates.map(dKey => formatChartDateLong(dKey));
+
+  // Hitung metrik ringkasan
+  const totalHari = sortedDates.length;
+  const sumKapal = kapalData.reduce((a, b) => a + b, 0);
+  const sumGabus = gabusData.reduce((a, b) => a + b, 0);
+  let peakGabusVal = -1;
+  let peakGabusDate = "";
+  sortedDates.forEach(dKey => {
+    if (dateMap[dKey].totalGabus > peakGabusVal) {
+      peakGabusVal = dateMap[dKey].totalGabus;
+      peakGabusDate = formatChartDateShort(dKey);
+    }
+  });
+
+  updateChartMiniStats(
+    totalHari > 0 ? (sumKapal / totalHari).toFixed(1) : "0",
+    totalHari > 0 ? Math.round(sumGabus / totalHari) : 0,
+    peakGabusVal >= 0 ? `${formatDots(peakGabusVal)} Gabus (${peakGabusDate})` : "-",
+    totalHari
+  );
+
+  if (typeof Chart === "undefined") {
+    console.warn("Library Chart.js belum tersedia.");
+    return;
+  }
+
+  if (dailyChartInstance) {
+    dailyChartInstance.data.labels = labels;
+    dailyChartInstance.data.datasets[0].data = gabusData;
+    dailyChartInstance.data.datasets[1].data = kapalData;
+    dailyChartInstance.data.datasets[0].customShipNames = shipNamesList;
+    dailyChartInstance.data.datasets[0].customFullDates = fullDatesList;
+    dailyChartInstance.update();
+    return;
+  }
+
+  const ctx = canvas.getContext("2d");
+  const gabusGradient = ctx.createLinearGradient(0, 0, 0, 300);
+  gabusGradient.addColorStop(0, 'rgba(12, 35, 64, 0.95)');
+  gabusGradient.addColorStop(1, 'rgba(56, 136, 204, 0.7)');
+
+  dailyChartInstance = new Chart(ctx, {
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Total Muatan Gabus',
+          data: gabusData,
+          yAxisID: 'yGabus',
+          backgroundColor: gabusGradient,
+          hoverBackgroundColor: '#2b75b3',
+          borderRadius: 6,
+          borderSkipped: false,
+          maxBarThickness: 42,
+          order: 2,
+          customShipNames: shipNamesList,
+          customFullDates: fullDatesList
+        },
+        {
+          type: 'line',
+          label: 'Jumlah Kapal Pengangkut',
+          data: kapalData,
+          yAxisID: 'yKapal',
+          borderColor: '#ea580c',
+          backgroundColor: 'rgba(234, 88, 12, 0.1)',
+          borderWidth: 3,
+          fill: false,
+          tension: 0.35,
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#ea580c',
+          pointBorderWidth: 2.5,
+          pointRadius: 4.5,
+          pointHoverRadius: 7,
+          pointHoverBackgroundColor: '#ea580c',
+          pointHoverBorderColor: '#ffffff',
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(12, 35, 64, 0.95)',
+          titleColor: '#ffffff',
+          titleFont: {
+            family: 'Plus Jakarta Sans',
+            size: 13,
+            weight: '700'
+          },
+          bodyColor: '#e2e8f0',
+          bodyFont: {
+            family: 'Plus Jakarta Sans',
+            size: 12,
+            weight: '500'
+          },
+          padding: 12,
+          cornerRadius: 8,
+          boxPadding: 6,
+          usePointStyle: true,
+          callbacks: {
+            title: function(items) {
+              if (!items || items.length === 0) return "";
+              const idx = items[0].dataIndex;
+              const fullDates = items[0].chart.data.datasets[0].customFullDates;
+              return (fullDates && fullDates[idx]) ? fullDates[idx] : items[0].label;
+            },
+            label: function(context) {
+              if (context.dataset.yAxisID === 'yGabus') {
+                return ` 📦 Muatan Gabus: ${formatDots(context.parsed.y)} Gabus`;
+              }
+              if (context.dataset.yAxisID === 'yKapal') {
+                const idx = context.dataIndex;
+                const ships = context.chart.data.datasets[0].customShipNames ? context.chart.data.datasets[0].customShipNames[idx] : [];
+                let shipStr = "";
+                if (ships && ships.length > 0) {
+                  if (ships.length <= 3) {
+                    shipStr = ` (${ships.join(', ')})`;
+                  } else {
+                    shipStr = ` (${ships.slice(0, 2).join(', ')} +${ships.length - 2} kapal)`;
+                  }
+                }
+                return ` 🚢 Kapal Pengangkut: ${context.parsed.y} Kapal${shipStr}`;
+              }
+              return ` ${context.dataset.label}: ${context.parsed.y}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            color: '#64748b',
+            font: {
+              family: 'Plus Jakarta Sans',
+              weight: '600',
+              size: 11
+            },
+            maxRotation: 45,
+            minRotation: 0
+          }
+        },
+        yGabus: {
+          type: 'linear',
+          position: 'left',
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: '📦 Total Gabus',
+            color: '#1e40af',
+            font: {
+              family: 'Plus Jakarta Sans',
+              weight: '700',
+              size: 11
+            }
+          },
+          ticks: {
+            color: '#64748b',
+            font: {
+              family: 'Plus Jakarta Sans',
+              size: 10
+            },
+            callback: function(val) {
+              return formatDots(val);
+            }
+          },
+          grid: {
+            color: 'rgba(226, 232, 240, 0.7)'
+          }
+        },
+        yKapal: {
+          type: 'linear',
+          position: 'right',
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: '🚢 Kapal Pengangkut',
+            color: '#ea580c',
+            font: {
+              family: 'Plus Jakarta Sans',
+              weight: '700',
+              size: 11
+            }
+          },
+          ticks: {
+            stepSize: 1,
+            precision: 0,
+            color: '#ea580c',
+            font: {
+              family: 'Plus Jakarta Sans',
+              weight: '600',
+              size: 10
+            },
+            callback: function(val) {
+              return val + ' Kapal';
+            }
+          },
+          grid: {
+            drawOnChartArea: false
+          }
+        }
+      }
+    }
+  });
 }
 
 // ==========================================
@@ -711,7 +994,12 @@ function renderBlangkoNota() {
           <span class="print-text print-resi-box" id="txtPrintResi">${resiVal}</span>
           <input type="text" class="resi-input no-print" id="inpResi" value="${resiVal}" oninput="handleResiInput(this.value)">
         </div>
-        <div class="nota-header-title">NOTA ONGKIR</div>
+        <div class="nota-header-title">
+          <div class="nota-title-brand-row">
+            <img src="LOGO.jpg" alt="Logo PARENGGEKITA" class="nota-mini-logo">
+            <span>NOTA ONGKIR</span>
+          </div>
+        </div>
         <div class="nota-header-date">${tglStr}</div>
       </div>
 
@@ -1046,6 +1334,11 @@ function switchTab(tabName, el) {
   if (tabName === 'dashboard') {
     if (tabDashboard) tabDashboard.style.display = "block";
     renderDashboard();
+    if (dailyChartInstance) {
+      setTimeout(() => {
+        try { dailyChartInstance.resize(); } catch (_) {}
+      }, 50);
+    }
   } else if (tabName === 'kapal') {
     if (tabKapal) tabKapal.style.display = "block";
     filterData();
@@ -1061,3 +1354,12 @@ function switchTab(tabName, el) {
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+
+// Responsivitas Grafik saat Ukuran Layar Desktop Berubah
+window.addEventListener("resize", () => {
+  if (dailyChartInstance && currentTab === 'dashboard') {
+    try {
+      dailyChartInstance.resize();
+    } catch (_) {}
+  }
+});
