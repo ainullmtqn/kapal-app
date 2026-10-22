@@ -1247,6 +1247,11 @@ function renderBlangkoNota() {
 
   printArea.innerHTML = `
     <div class="${sheetClass}">
+      <!-- WATERMARK LOGO RESMI DI BELAKANG NOTA -->
+      <div class="nota-watermark" aria-hidden="true">
+        <img src="logo.png" alt="Watermark PARENGGEKITA" class="nota-watermark-img">
+      </div>
+
       <div class="nota-header-top">
         <div class="resi-wrap">
           <span>Res</span>
@@ -1255,7 +1260,7 @@ function renderBlangkoNota() {
         </div>
         <div class="nota-header-title">
           <div class="nota-title-brand-row">
-            <img src="LOGO.jpg" alt="Logo PARENGGEKITA" class="nota-mini-logo">
+            <img src="logo.png" alt="Logo PARENGGEKITA" class="nota-mini-logo">
             <span>NOTA ONGKIR</span>
           </div>
         </div>
