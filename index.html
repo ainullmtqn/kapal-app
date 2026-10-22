@@ -115,7 +115,15 @@
         <div class="kpi-card" onclick="switchTab('kapal')" style="cursor: pointer;" title="Buka Database Pelayaran Kapal">
           <div class="kpi-header">
             <span class="kpi-label">Kapal Ongkir</span>
-            <div class="kpi-icon-box">🚢</div>
+            <div class="kpi-icon-box kpi-icon-ship">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                <path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76"/>
+                <path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/>
+                <path d="M12 10v4"/>
+                <path d="M12 2v3"/>
+              </svg>
+            </div>
           </div>
           <div class="kpi-value" id="kpiKapalOnline">0 Kapal</div>
           <div class="kpi-sub">Pelayaran Tercatat →</div>
@@ -124,7 +132,13 @@
         <div class="kpi-card">
           <div class="kpi-header">
             <span class="kpi-label">Total Muatan</span>
-            <div class="kpi-icon-box" style="background: #f0fdf4; color: #166534;">📦</div>
+            <div class="kpi-icon-box kpi-icon-cargo">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                <path d="m3.3 7 8.7 5 8.7-5"/>
+                <path d="M12 22V12"/>
+              </svg>
+            </div>
           </div>
           <div class="kpi-value" id="kpiTotalGabus">0 Gabus</div>
           <div class="kpi-sub">Fisik Muatan Masuk</div>
@@ -133,7 +147,14 @@
         <div class="kpi-card" onclick="switchTab('muatan')" style="cursor: pointer;" title="Buka Data Muatan Parengge">
           <div class="kpi-header">
             <span class="kpi-label">Kapal Parengge</span>
-            <div class="kpi-icon-box" style="background: #fdf4ff; color: #9333ea;">👥</div>
+            <div class="kpi-icon-box kpi-icon-parengge">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
           </div>
           <div class="kpi-value" id="kpiTotalParengge">0</div>
           <div class="kpi-sub">Pemilik Muatan Unik →</div>
@@ -142,7 +163,15 @@
         <div class="kpi-card" onclick="switchTab('audit')" style="cursor: pointer;" title="Buka Audit & Selisih">
           <div class="kpi-header">
             <span class="kpi-label">Status Audit</span>
-            <div class="kpi-icon-box" id="kpiAuditIconBox" style="background: #f0fdf4; color: #166534;">⚖️</div>
+            <div class="kpi-icon-box kpi-icon-audit" id="kpiAuditIconBox">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                <path d="M7 21h10"/>
+                <path d="M12 3v18"/>
+                <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
+              </svg>
+            </div>
           </div>
           <div class="kpi-value" id="kpiStatusAudit" style="color: var(--success-text);">Semua Sesuai</div>
           <div class="kpi-sub" id="kpiSubAudit">0 Selisih</div>
@@ -152,7 +181,11 @@
       <!-- Alert Selisih Banner -->
       <div class="alert-banner" id="alertBanner" style="display: none;" onclick="switchTab('audit')">
         <div class="alert-left">
-          <span style="font-size: 1.25rem;">⚠️</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
           <div>
             <div class="alert-title">Perhatian: Selisih Hitung Muatan</div>
             <div class="alert-desc" id="alertDesc">Ditemukan kapal dengan perbedaan manifest fisik.</div>
@@ -165,7 +198,13 @@
       <div class="chart-section-card" id="chartSectionCard">
         <div class="chart-card-header">
           <div class="chart-title-wrap">
-            <div class="chart-icon-box">📊</div>
+            <div class="chart-icon-box">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+            </div>
             <div>
               <h3 class="chart-title">Grafik Harian Kapal Pengangkut & Muatan Gabus</h3>
               <p class="chart-subtitle">Statistik harian armada kapal pengangkut dan volume gabus ikan per tanggal</p>

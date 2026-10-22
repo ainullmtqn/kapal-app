@@ -227,7 +227,7 @@ function renderDashboard() {
       kpiAudit.style.color = "var(--success-text)";
       if (kpiSubAudit) kpiSubAudit.textContent = "0 Selisih hitung";
     } else {
-      kpiAudit.textContent = `${selisihList.length} Selisih ⚠️`;
+      kpiAudit.textContent = `${selisihList.length} Selisih`;
       kpiAudit.style.color = "var(--warning-text)";
       if (kpiSubAudit) kpiSubAudit.textContent = "Perlu verifikasi";
     }
