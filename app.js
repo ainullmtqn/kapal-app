@@ -676,7 +676,7 @@ function updateChartMiniStats(avgKapal, avgGabus, peakGabus, totalDays) {
   const elPeakGabus = document.getElementById("statPeakGabus");
   const elTotalDays = document.getElementById("statTotalDays");
 
-  if (elAvgKapal) elAvgKapal.textContent = `${avgKapal} / hari`;
+  if (elAvgKapal) elAvgKapal.textContent = `${formatDots(avgKapal)} / hari`;
   if (elAvgGabus) elAvgGabus.textContent = `${formatDots(avgGabus)} Gabus / hari`;
   if (elPeakGabus) elPeakGabus.textContent = peakGabus || "-";
   if (elTotalDays) elTotalDays.textContent = `${totalDays} Hari`;
@@ -696,7 +696,7 @@ function renderDailyChart() {
     }
     canvas.style.display = "none";
     if (emptyState) emptyState.style.display = "flex";
-    updateChartMiniStats("0", 0, "-", 0);
+    updateChartMiniStats(0, 0, "-", 0);
     return;
   }
 
@@ -724,7 +724,7 @@ function renderDailyChart() {
     }
     canvas.style.display = "none";
     if (emptyState) emptyState.style.display = "flex";
-    updateChartMiniStats("0", 0, "-", 0);
+    updateChartMiniStats(0, 0, "-", 0);
     return;
   }
 
@@ -756,7 +756,7 @@ function renderDailyChart() {
   });
 
   updateChartMiniStats(
-    totalHari > 0 ? (sumKapal / totalHari).toFixed(1) : "0",
+    totalHari > 0 ? Math.round(sumKapal / totalHari) : 0,
     totalHari > 0 ? Math.round(sumGabus / totalHari) : 0,
     peakGabusVal >= 0 ? `${formatDots(peakGabusVal)} Gabus (${peakGabusDate})` : "-",
     totalHari
