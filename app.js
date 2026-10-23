@@ -17,6 +17,9 @@ let currentChartRangeDays = 7;
 let lastSyncTimestamp = 0;        // Anti-Spam Rate Limiter Cooldown
 let isWebhookLocked = true;       // Kunci URL Webhook
 let isWebhookVisible = false;     // Masking Sandi Webhook
+let lastDataSignature = "";       // Sidik Jari Data untuk Deteksi Perubahan Realtime
+let autoSyncTimer = null;         // Timer Polling Latar Belakang
+let isSilentChecking = false;     // Proteksi Request Latar Belakang Simultan
 
 // Sanitasi Input Anti-XSS (Script Injection Protection)
 function escapeHtml(str) {
@@ -101,6 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
       allPelayaran = JSON.parse(cachedPel) || [];
       allRincian = JSON.parse(cachedRin) || [];
       if (allPelayaran.length > 0) {
+        lastDataSignature = computeDataSignature(allPelayaran, allRincian);
         updateStatusBadge("cache", "Cache", ` (${allPelayaran.length} Kapal)`);
         renderDashboard();
         filterData();
@@ -141,6 +145,16 @@ document.addEventListener("DOMContentLoaded", () => {
   } else if (allPelayaran.length === 0) {
     updateStatusBadge("offline", "Belum Diatur");
   }
+
+  // 5. Inisialisasi Real-Time Auto Sync (Silent Polling & Diffing)
+  startRealtimeSync(25);
+
+  // Periksa seketika saat pengguna membuka kembali tab browser
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && localStorage.getItem("GAS_WEBHOOK_URL")) {
+      cekDataBaruSilent();
+    }
+  });
 });
 
 function updateStatusBadge(status, text, countText = "") {
@@ -195,6 +209,7 @@ async function tarikSemuaData() {
       allRincian = data.rincian || [];
       
       allPelayaran.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
+      lastDataSignature = computeDataSignature(allPelayaran, allRincian);
 
       // Simpan ke Cache Offline
       try {
@@ -226,6 +241,105 @@ async function tarikSemuaData() {
     } else {
       updateStatusBadge("offline", "Offline");
     }
+  }
+}
+
+// ==========================================
+// SINKRONISASI REALTIME & DATA DIFFING (AUTO-REFRESH)
+// ==========================================
+
+// Menghitung sidik jari (fingerprint) data untuk mendeteksi perubahan dari Spreadsheet
+function computeDataSignature(pelayaran, rincian) {
+  if (!Array.isArray(pelayaran) && !Array.isArray(rincian)) return "";
+
+  const pList = (pelayaran || []).map(p => 
+    `${p.kunci_unik || ''}_${p.tanggal || ''}_${p.nama_kapal || ''}_${p.juragan || ''}_${p.lokasi_muat || ''}_${p.total_hitung || 0}_${p.status_selisih || ''}_${p.resi || ''}_${p.subtotal_ongkir || 0}_${p.potongan || 0}_${p.total_bersih || 0}`
+  ).join("|");
+
+  const rList = (rincian || []).map(r => 
+    `${r.kunci_unik || ''}_${r.nama_pemilik || ''}_${r.jumlah || 0}_${r.ongkir || 0}`
+  ).join("|");
+
+  return `${(pelayaran || []).length}#${(rincian || []).length}#${pList}#${rList}`;
+}
+
+// Cek perubahan data di latar belakang tanpa me-reload atau mengedipkan tampilan
+async function cekDataBaruSilent() {
+  // 1. Lewatkan jika tab sedang diminimalkan, sedang mengecek, atau user sedang mengetik
+  if (document.hidden || isSilentChecking || autoSaveTimer !== null) return;
+
+  // 2. Jika modal nota sedang aktif terbuka, tunda update agar tidak mengganggu pengetikan pengguna
+  const modal = document.getElementById("notaModal");
+  if (modal && modal.classList.contains("active")) return;
+
+  const url = localStorage.getItem("GAS_WEBHOOK_URL");
+  if (!url) return;
+
+  isSilentChecking = true;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    if (data.status === "sukses") {
+      const dataBaruPelayaran = data.pelayaran || [];
+      const dataBaruRincian = data.rincian || [];
+      const newSignature = computeDataSignature(dataBaruPelayaran, dataBaruRincian);
+
+      // JIKA DATA SAMA PERSIS: Jangan lakukan apa-apa (Zero Disruption, tidak ada refresh)
+      if (lastDataSignature !== "" && lastDataSignature === newSignature) {
+        return;
+      }
+
+      // JIKA TERBACA DATA BARU / PERUBAHAN DI SPREADSHEET:
+      const totalKapalSebelumnya = allPelayaran.length;
+      lastDataSignature = newSignature;
+      allPelayaran = dataBaruPelayaran;
+      allRincian = dataBaruRincian;
+      allPelayaran.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
+
+      // Simpan ke Cache Offline
+      try {
+        localStorage.setItem("CACHE_PELAYARAN", JSON.stringify(allPelayaran));
+        localStorage.setItem("CACHE_RINCIAN", JSON.stringify(allRincian));
+      } catch (_) {}
+
+      updateStatusBadge("online", "Online", ` (${allPelayaran.length} Kapal)`);
+      if (document.getElementById("countMuatan")) {
+        document.getElementById("countMuatan").textContent = allRincian.length;
+      }
+
+      // Perbarui tampilan aktif secara otomatis dan mulus
+      renderDashboard();
+      if (currentTab === 'kapal') filterData();
+      if (currentTab === 'muatan') renderSemuaMuatan();
+      if (currentTab === 'audit') renderAuditTab();
+
+      // Notifikasi halus kepada pengguna
+      if (allPelayaran.length > totalKapalSebelumnya) {
+        showSecurityToast(`🚢 Data baru terdeteksi dari Spreadsheet! Total: ${allPelayaran.length} kapal.`);
+      } else {
+        showSecurityToast("✨ Perubahan data dari Spreadsheet berhasil disinkronkan.");
+      }
+    }
+  } catch (err) {
+    console.warn("Pengecekan data baru di latar belakang dilewati:", err);
+  } finally {
+    isSilentChecking = false;
+  }
+}
+
+// Menjalankan pemeriksaan otomatis berkala
+function startRealtimeSync(intervalDetik = 25) {
+  stopRealtimeSync();
+  autoSyncTimer = setInterval(cekDataBaruSilent, intervalDetik * 1000);
+}
+
+// Menghentikan pemeriksaan otomatis berkala
+function stopRealtimeSync() {
+  if (autoSyncTimer) {
+    clearInterval(autoSyncTimer);
+    autoSyncTimer = null;
   }
 }
 
@@ -1558,6 +1672,7 @@ async function eksekusiSimpanOtomatis() {
     try {
       localStorage.setItem("CACHE_PELAYARAN", JSON.stringify(allPelayaran));
       localStorage.setItem("CACHE_RINCIAN", JSON.stringify(allRincian));
+      lastDataSignature = computeDataSignature(allPelayaran, allRincian);
     } catch (_) {}
 
     renderDashboard();
