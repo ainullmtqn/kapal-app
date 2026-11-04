@@ -21,15 +21,23 @@ let lastDataSignature = "";       // Sidik Jari Data untuk Deteksi Perubahan Rea
 let autoSyncTimer = null;         // Timer Polling Latar Belakang
 let isSilentChecking = false;     // Proteksi Request Latar Belakang Simultan
 
-// Sanitasi Input Anti-XSS (Script Injection Protection)
+// Sanitasi Input Anti-XSS (Script Injection Protection & HTML Entity Encoding)
 function escapeHtml(str) {
   if (str === null || str === undefined) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
+  const s = String(str);
+  // Mencegah double-escaping jika entitas HTML sudah ada sebelumnya
+  return s
+    .replace(/&(?!amp;|lt;|gt;|quot;|#039;|#x27;)/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+// Sanitasi Input String Pengguna
+function sanitizeInput(str) {
+  if (str === null || str === undefined) return "";
+  return escapeHtml(String(str).trim());
 }
 
 // Notifikasi Melayang Khusus Keamanan & Proteksi
@@ -50,23 +58,90 @@ function showSecurityToast(msg) {
 }
 
 // ==========================================
-// FORMATTER ANGKA & TANGGAL
+// FORMATTER & VALIDASI TIPE DATA ANGKA & TANGGAL
 // ==========================================
+
+// Validasi Tipe Data Angka Ongkir Non-Negatif
+function validateOngkir(val) {
+  if (val === null || val === undefined || val === "") return 0;
+  let num;
+  if (typeof val === "number") {
+    num = val;
+  } else {
+    const str = String(val).trim();
+    // Tolak jika nilai negatif atau mengandung karakter berbahaya / huruf
+    if (str.includes("-") || /[<>"'&;a-zA-Z]/.test(str)) {
+      return 0;
+    }
+    const digits = str.replace(/\D/g, "");
+    if (!digits) return 0;
+    num = Number(digits);
+  }
+  if (typeof num !== "number" || isNaN(num) || !isFinite(num) || num <= 0) {
+    return 0;
+  }
+  return Math.round(num);
+}
+
 function formatDots(val) {
   if (!val && val !== 0) return "0";
-  let str = val.toString().replace(/\D/g, "");
-  if (!str) return "0";
-  return new Intl.NumberFormat("id-ID").format(Number(str));
+  let num = validateOngkir(val);
+  if (!num) return "0";
+  return new Intl.NumberFormat("id-ID").format(num);
 }
 
 function parseDots(str) {
-  if (!str) return 0;
-  let digits = str.toString().replace(/\D/g, "");
-  return Number(digits) || 0;
+  return validateOngkir(str);
 }
 
 function formatRp(n) {
-  return new Intl.NumberFormat("id-ID").format(Math.round(n || 0));
+  const safeNum = validateOngkir(n);
+  return new Intl.NumberFormat("id-ID").format(safeNum);
+}
+
+// Validasi Tipe Data Format Tanggal (Anti-XSS & Format Guard)
+function validateDateFormat(tglStr) {
+  if (!tglStr && tglStr !== 0) return false;
+  if (tglStr instanceof Date && !isNaN(tglStr.getTime())) return true;
+  
+  const str = String(tglStr).trim();
+  if (!str) return false;
+
+  // Proteksi XSS: Tolak jika mengandung karakter berbahaya / tag HTML / kurung kode
+  if (/[<>"'&;()]/.test(str)) return false;
+
+  // 1. Format YYYY-MM-DD atau ISO Date (e.g. 2026-10-23)
+  if (/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?:T.*)?$/.test(str)) {
+    return true;
+  }
+
+  // 2. Format DD/MM/YYYY atau DD-MM-YYYY
+  if (/^(?:0?[1-9]|[12]\d|3[01])[\/\-](?:0?[1-9]|1[0-2])[\/\-]\d{4}$/.test(str)) {
+    return true;
+  }
+
+  // 3. Format YYYY/MM/DD
+  if (/^\d{4}[\/\-](?:0?[1-9]|1[0-2])[\/\-](?:0?[1-9]|[12]\d|3[01])$/.test(str)) {
+    return true;
+  }
+
+  // 4. Format Tanggal Teks Bahasa Indonesia (e.g. 23 Oktober 2026)
+  if (/^(?:0?[1-9]|[12]\d|3[01])\s+[a-zA-Z]{3,10}\s+\d{4}$/.test(str)) {
+    const match = str.match(/^(?:0?[1-9]|[12]\d|3[01])\s+([a-zA-Z]{3,10})\s+\d{4}$/);
+    if (match) {
+      const mStr = match[1].toLowerCase().substring(0, 3);
+      const validMonths = ['jan', 'feb', 'mar', 'apr', 'mei', 'may', 'jun', 'jul', 'ags', 'agt', 'aug', 'sep', 'okt', 'oct', 'nov', 'des', 'dec'];
+      if (validMonths.includes(mStr)) return true;
+    }
+  }
+
+  // 5. Cek objek tanggal JS standar yang valid tanpa tag HTML
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime()) && /^\d{4}/.test(parsed.getFullYear().toString())) {
+    return true;
+  }
+
+  return false;
 }
 
 function formatTanggalIndo(dateObj = new Date()) {
@@ -77,6 +152,135 @@ function formatTanggalIndo(dateObj = new Date()) {
   const bln = bulanArr[dateObj.getMonth()];
   const thn = dateObj.getFullYear();
   return `${hari}, ${tgl} ${bln} ${thn}`;
+}
+
+// Normalisasi Tanggal ke Format Standar YYYY-MM-DD
+function normalizeDateKey(tglStr) {
+  if (!tglStr && tglStr !== 0) return "";
+  
+  // Validasi format tanggal & tangkal XSS injection
+  if (!validateDateFormat(tglStr)) {
+    return escapeHtml(String(tglStr).replace(/[<>"'&]/g, "")).trim();
+  }
+
+  if (tglStr instanceof Date && !isNaN(tglStr.getTime())) {
+    const yr = tglStr.getFullYear();
+    const mo = String(tglStr.getMonth() + 1).padStart(2, '0');
+    const da = String(tglStr.getDate()).padStart(2, '0');
+    return `${yr}-${mo}-${da}`;
+  }
+  let str = tglStr.toString().trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    return str.substring(0, 10);
+  }
+  const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (dmy) {
+    const d = dmy[1].padStart(2, '0');
+    const m = dmy[2].padStart(2, '0');
+    const y = dmy[3];
+    return `${y}-${m}-${d}`;
+  }
+  const ymdSlash = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (ymdSlash) {
+    const y = ymdSlash[1];
+    const m = ymdSlash[2].padStart(2, '0');
+    const d = ymdSlash[3].padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const indoMatch = str.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/);
+  if (indoMatch) {
+    const d = indoMatch[1].padStart(2, '0');
+    const mStr = indoMatch[2].toLowerCase().substring(0, 3);
+    const y = indoMatch[3];
+    const monthMap = {
+      jan: '01', feb: '02', mar: '03', apr: '04', mei: '05', may: '05',
+      jun: '06', jul: '07', ags: '08', agt: '08', aug: '08', sep: '09',
+      okt: '10', oct: '10', nov: '11', des: '12', dec: '12'
+    };
+    if (monthMap[mStr]) {
+      return `${y}-${monthMap[mStr]}-${d}`;
+    }
+  }
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    const yr = parsed.getFullYear();
+    const mo = String(parsed.getMonth() + 1).padStart(2, '0');
+    const da = String(parsed.getDate()).padStart(2, '0');
+    return `${yr}-${mo}-${da}`;
+  }
+  return escapeHtml(str);
+}
+
+// Identifikasi Trip Unik Berdasarkan Kombinasi [Nama Kapal] + [Tanggal]
+function getNormalizedTripId(namaKapal, tanggal, fallbackKunci = "") {
+  const k = (namaKapal || "").toString().trim();
+  const rawTgl = (tanggal || "").toString().trim();
+  const normDate = normalizeDateKey(rawTgl);
+
+  if (k && normDate) {
+    return `${k}_${normDate}`;
+  }
+  if (k && rawTgl) {
+    return `${k}_${rawTgl}`;
+  }
+  if (fallbackKunci && String(fallbackKunci).trim()) {
+    return String(fallbackKunci).trim();
+  }
+  return k || normDate || "trip_unknown";
+}
+
+// Pengecekan Presisi Apakah Rincian Milik Trip Kapal Tertentu
+function isSameTripRecord(r, kapal) {
+  if (!r || !kapal) return false;
+
+  const rKapal = (r.nama_kapal || "").trim().toLowerCase();
+  const kKapal = (kapal.nama_kapal || "").trim().toLowerCase();
+
+  // 1. Jika nama kapal sama: wajib cocokkan tanggal jika keduanya memiliki tanggal
+  if (rKapal && kKapal && rKapal === kKapal) {
+    const rDate = normalizeDateKey(r.tanggal);
+    const kDate = normalizeDateKey(kapal.tanggal);
+    if (rDate && kDate) {
+      return rDate === kDate;
+    }
+    if (r.tanggal && kapal.tanggal) {
+      const rTgl = String(r.tanggal).trim().toLowerCase();
+      const kTgl = String(kapal.tanggal).trim().toLowerCase();
+      if (rTgl === kTgl) return true;
+      const cleanR = rTgl.replace(/[^0-9]/g, "");
+      const cleanK = kTgl.replace(/[^0-9]/g, "");
+      if (cleanR && cleanK) {
+        return cleanR === cleanK;
+      }
+    }
+  }
+
+  // 2. Cocokkan trip ID unik berbasis kombinasi [nama kapal] + [tanggal]
+  const rTripId = getNormalizedTripId(r.nama_kapal, r.tanggal, r.kunci_unik).trim().toLowerCase();
+  const kTripId = getNormalizedTripId(kapal.nama_kapal, kapal.tanggal, kapal.kunci_unik).trim().toLowerCase();
+  if (rTripId && kTripId && rTripId === kTripId) {
+    return true;
+  }
+
+  return false;
+}
+
+// Normalisasi Seluruh Kunci Unik pada Kumpulan Data Pelayaran dan Rincian
+function normalizeDatasetTripIds(pelayaranList, rincianList) {
+  if (Array.isArray(pelayaranList)) {
+    pelayaranList.forEach(p => {
+      if (p) {
+        p.kunci_unik = getNormalizedTripId(p.nama_kapal, p.tanggal, p.kunci_unik);
+      }
+    });
+  }
+  if (Array.isArray(rincianList)) {
+    rincianList.forEach(r => {
+      if (r) {
+        r.kunci_unik = getNormalizedTripId(r.nama_kapal, r.tanggal, r.kunci_unik);
+      }
+    });
+  }
 }
 
 // ==========================================
@@ -104,6 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
       allPelayaran = JSON.parse(cachedPel) || [];
       allRincian = JSON.parse(cachedRin) || [];
       if (allPelayaran.length > 0) {
+        normalizeDatasetTripIds(allPelayaran, allRincian);
         lastDataSignature = computeDataSignature(allPelayaran, allRincian);
         updateStatusBadge("cache", "Cache", ` (${allPelayaran.length} Kapal)`);
         renderDashboard();
@@ -208,6 +413,7 @@ async function tarikSemuaData() {
       allPelayaran = data.pelayaran || [];
       allRincian = data.rincian || [];
       
+      normalizeDatasetTripIds(allPelayaran, allRincian);
       allPelayaran.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
       lastDataSignature = computeDataSignature(allPelayaran, allRincian);
 
@@ -284,6 +490,7 @@ async function cekDataBaruSilent() {
     if (data.status === "sukses") {
       const dataBaruPelayaran = data.pelayaran || [];
       const dataBaruRincian = data.rincian || [];
+      normalizeDatasetTripIds(dataBaruPelayaran, dataBaruRincian);
       const newSignature = computeDataSignature(dataBaruPelayaran, dataBaruRincian);
 
       // JIKA DATA SAMA PERSIS: Jangan lakukan apa-apa (Zero Disruption, tidak ada refresh)
@@ -514,6 +721,7 @@ function handleFileImporCadangan(e) {
 
       allPelayaran = parsed.pelayaran;
       allRincian = parsed.rincian || [];
+      normalizeDatasetTripIds(allPelayaran, allRincian);
 
       // Simpan ke Cache Offline
       try {
@@ -618,28 +826,6 @@ function renderDashboard() {
 // ==========================================
 // GRAFIK HARIAN KAPAL PENGANGKUT & GABUS
 // ==========================================
-function normalizeDateKey(tglStr) {
-  if (!tglStr) return "";
-  tglStr = tglStr.toString().trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(tglStr)) {
-    return tglStr.substring(0, 10);
-  }
-  const dmy = tglStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-  if (dmy) {
-    const d = dmy[1].padStart(2, '0');
-    const m = dmy[2].padStart(2, '0');
-    const y = dmy[3];
-    return `${y}-${m}-${d}`;
-  }
-  const parsed = new Date(tglStr);
-  if (!isNaN(parsed.getTime())) {
-    const yr = parsed.getFullYear();
-    const mo = String(parsed.getMonth() + 1).padStart(2, '0');
-    const da = String(parsed.getDate()).padStart(2, '0');
-    return `${yr}-${mo}-${da}`;
-  }
-  return tglStr;
-}
 
 function formatChartDateShort(dKey) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(dKey)) {
@@ -977,7 +1163,8 @@ function setPillFilter(type, el) {
 
 function filterData() {
   const searchInput = document.getElementById("searchInput");
-  const q = searchInput ? searchInput.value.toLowerCase().trim() : "";
+  const rawQ = searchInput ? searchInput.value : "";
+  const q = sanitizeInput(rawQ).toLowerCase();
   const todayStr = new Date().toISOString().split("T")[0];
 
   filteredPelayaran = allPelayaran.filter(p => {
@@ -1025,10 +1212,11 @@ function renderDaftarKapal() {
     const badgeClass = isOk ? "badge-status-ok" : "badge-status-warn";
     const badgeLabel = isOk ? "SESUAI ✓" : "SELISIH ⚠️";
     const safeNama = escapeHtml(p.nama_kapal);
-    const safeTanggal = escapeHtml(p.tanggal || "-");
+    const safeTanggal = validateDateFormat(p.tanggal) ? escapeHtml(normalizeDateKey(p.tanggal)) : escapeHtml(p.tanggal || "-");
     const safeJuragan = escapeHtml(p.juragan || "-");
     const safeLokasi = escapeHtml(p.lokasi_muat || "DDL");
-    const safeKunci = escapeHtml(p.kunci_unik);
+    const tripKey = p.kunci_unik || getNormalizedTripId(p.nama_kapal, p.tanggal);
+    const safeKunci = escapeHtml(tripKey).replace(/'/g, "\\'");
 
     const card = document.createElement("div");
     card.className = "card";
@@ -1179,10 +1367,11 @@ function renderAuditTab() {
     card.className = "card";
     card.style.borderLeft = "4px solid var(--warning-text)";
     const safeNama = escapeHtml(p.nama_kapal);
-    const safeTanggal = escapeHtml(p.tanggal || "-");
+    const safeTanggal = validateDateFormat(p.tanggal) ? escapeHtml(normalizeDateKey(p.tanggal)) : escapeHtml(p.tanggal || "-");
     const safeJuragan = escapeHtml(p.juragan || "-");
     const safeLokasi = escapeHtml(p.lokasi_muat || "DDL");
-    const safeKunci = escapeHtml(p.kunci_unik);
+    const tripKey = p.kunci_unik || getNormalizedTripId(p.nama_kapal, p.tanggal);
+    const safeKunci = escapeHtml(tripKey).replace(/'/g, "\\'");
 
     card.innerHTML = `
       <div class="card-header">
@@ -1209,55 +1398,38 @@ function renderAuditTab() {
 // MODAL NOTA KONTAN CETAK (A6)
 // ==========================================
 function bukaNota(kunciUnik) {
-  activeKapal = allPelayaran.find(p => p.kunci_unik === kunciUnik);
-  if (!activeKapal) return;
+  if (!kunciUnik && kunciUnik !== 0) return;
+  const targetKey = String(kunciUnik).trim().toLowerCase();
 
-  const aKapal = (activeKapal.nama_kapal || "").trim().toLowerCase();
-  const aKunci = (activeKapal.kunci_unik || "").trim().toLowerCase();
-  const aTgl = (activeKapal.tanggal || "").toString().trim().toLowerCase();
-  const cleanA = aTgl.replace(/[^0-9]/g, "");
-
-  const muatanKapal = allRincian.filter(r => {
-    // 1. Cocokkan kunci_unik jika keduanya ada
-    const rKunci = (r.kunci_unik || "").trim().toLowerCase();
-    if (rKunci && aKunci && rKunci === aKunci) {
-      return true;
-    }
-
-    // 2. Cocokkan nama kapal
-    const rKapal = (r.nama_kapal || "").trim().toLowerCase();
-    if (rKapal && aKapal && rKapal === aKapal) {
-      // Jika salah satu tanggal kosong, anggap cocok
-      if (!r.tanggal || !activeKapal.tanggal) return true;
-
-      const rTgl = r.tanggal.toString().trim().toLowerCase();
-      if (rTgl === aTgl) return true;
-
-      // Normalisasi angka tanggal (mengatasi format YYYY-MM-DD vs DD/MM/YYYY)
-      const cleanR = rTgl.replace(/[^0-9]/g, "");
-      if (cleanR && cleanA) {
-        if (cleanR === cleanA) return true;
-        if (cleanR.length >= 8 && cleanA.length >= 8) {
-          // Cek substring tanggal/bulan/tahun
-          if (cleanR.slice(-4) === cleanA.slice(-4)) return true;
-        }
-      }
-      return true;
-    }
-    return false;
+  activeKapal = allPelayaran.find(p => {
+    const pKunci = (p.kunci_unik || getNormalizedTripId(p.nama_kapal, p.tanggal)).trim().toLowerCase();
+    return pKunci === targetKey;
   });
 
+  if (!activeKapal) {
+    activeKapal = allPelayaran.find(p => {
+      const generated = getNormalizedTripId(p.nama_kapal, p.tanggal).trim().toLowerCase();
+      return generated === targetKey;
+    });
+  }
+
+  if (!activeKapal) return;
+
+  activeKapal.kunci_unik = getNormalizedTripId(activeKapal.nama_kapal, activeKapal.tanggal, activeKapal.kunci_unik);
+
+  const muatanKapal = allRincian.filter(r => isSameTripRecord(r, activeKapal));
+
   notaItems = muatanKapal.map(m => {
-    let ongkirTersimpan = parseDots(m.ongkir);
-    let gabus = Number(m.jumlah) || 0;
+    let ongkirTersimpan = validateOngkir(m.ongkir);
+    let gabus = Math.max(0, Math.floor(Number(m.jumlah) || 0));
     return {
-      nama: m.nama_pemilik || "Tanpa Nama",
+      nama: sanitizeInput(m.nama_pemilik || "Tanpa Nama"),
       gabus: gabus,
-      ongkir: ongkirTersimpan > 0 ? ongkirTersimpan : 0
+      ongkir: ongkirTersimpan
     };
   });
 
-  potonganNominal = parseDots(activeKapal.potongan) || 0;
+  potonganNominal = validateOngkir(activeKapal.potongan);
 
   renderBlangkoNota();
   updateSaveIndicator("saved");
@@ -1293,7 +1465,7 @@ function hapusBaris(idx) {
     notaItems.splice(idx, 1);
 
     allRincian = allRincian.filter(r => {
-      if (r.kunci_unik === activeKapal.kunci_unik) {
+      if (isSameTripRecord(r, activeKapal)) {
         return (r.nama_pemilik || "").trim().toLowerCase() !== namaHapus;
       }
       return true;
@@ -1347,8 +1519,8 @@ function renderBlangkoNota() {
     } else {
       notaItems.forEach((item, idx) => {
         const safeNama = escapeHtml(item ? item.nama : "");
-        const safeGabus = Number(item ? item.gabus : 0) || 0;
-        const safeOngkir = Number(item ? item.ongkir : 0) || 0;
+        const safeGabus = Math.max(0, Math.floor(Number(item ? item.gabus : 0) || 0));
+        const safeOngkir = validateOngkir(item ? item.ongkir : 0);
         rowsHtml += `
           <tr>
             <td class="cell-no">${idx + 1}</td>
@@ -1361,7 +1533,7 @@ function renderBlangkoNota() {
             </td>
             <td style="text-align: center;">
               <span class="print-text text-center" id="txtPrintGabus_${idx}">${safeGabus}</span>
-              <input type="number" class="inp-gabus no-print" value="${safeGabus}" oninput="updateGabusItem(${idx}, this.value)">
+              <input type="number" class="inp-gabus no-print" min="0" value="${safeGabus}" oninput="updateGabusItem(${idx}, this.value)">
             </td>
             <td style="text-align: right; padding-right: 5px;">
               <span class="print-text text-right font-bold" id="txtPrintOngkir_${idx}">${safeOngkir ? formatDots(safeOngkir) : ''}</span>
@@ -1374,7 +1546,7 @@ function renderBlangkoNota() {
 
     let totalGabusFisik = 0;
     if (Array.isArray(notaItems)) {
-      notaItems.forEach(i => totalGabusFisik += Number(i.gabus) || 0);
+      notaItems.forEach(i => totalGabusFisik += Math.max(0, Math.floor(Number(i.gabus) || 0)));
     }
 
     printArea.innerHTML = `
@@ -1476,22 +1648,29 @@ function renderBlangkoNota() {
 // ==========================================
 function updateNamaItem(idx, val) {
   if (!notaItems[idx]) return;
-  notaItems[idx].nama = val;
+  // Sanitasi input nama kapal parengge (escape HTML untuk mencegah XSS)
+  const safeVal = sanitizeInput(val);
+  notaItems[idx].nama = safeVal;
   const printEl = document.getElementById(`txtPrintNama_${idx}`);
-  if (printEl) printEl.textContent = val;
+  if (printEl) printEl.textContent = safeVal;
   triggerAutoSave();
 }
 
 function updateGabusItem(idx, val) {
   if (!notaItems[idx]) return;
-  const num = Number(val) || 0;
+  // Validasi tipe data muatan gabus non-negatif
+  let num = Number(val);
+  if (isNaN(num) || !isFinite(num) || num < 0) {
+    num = 0;
+  }
+  num = Math.max(0, Math.floor(num));
   notaItems[idx].gabus = num;
 
   const printEl = document.getElementById(`txtPrintGabus_${idx}`);
   if (printEl) printEl.textContent = num;
 
   let totalGabusFisik = 0;
-  notaItems.forEach(i => totalGabusFisik += Number(i.gabus) || 0);
+  notaItems.forEach(i => totalGabusFisik += Math.max(0, Math.floor(Number(i.gabus) || 0)));
   const elGabus = document.getElementById("txtTotalGabusNota");
   if (elGabus) elGabus.innerHTML = `Total: <b>${totalGabusFisik} Gabus</b>`;
 
@@ -1500,25 +1679,28 @@ function updateGabusItem(idx, val) {
 }
 
 function handleOngkirInput(idx, inputEl) {
-  if (!notaItems[idx]) return;
-  let num = parseDots(inputEl.value);
-  inputEl.value = num ? formatDots(num) : "";
+  if (!notaItems[idx] || !inputEl) return;
+  // Validasi tipe data angka ongkir non-negatif
+  let num = validateOngkir(inputEl.value);
+  inputEl.value = num > 0 ? formatDots(num) : "";
   notaItems[idx].ongkir = num;
   
   const printEl = document.getElementById(`txtPrintOngkir_${idx}`);
-  if (printEl) printEl.textContent = num ? formatDots(num) : "";
+  if (printEl) printEl.textContent = num > 0 ? formatDots(num) : "";
 
   hitungNota();
   triggerAutoSave();
 }
 
 function handlePotonganNominalInput(inputEl) {
-  let num = parseDots(inputEl.value);
-  inputEl.value = num ? formatDots(num) : "";
+  if (!inputEl) return;
+  // Validasi tipe data potongan nominal non-negatif
+  let num = validateOngkir(inputEl.value);
+  inputEl.value = num > 0 ? formatDots(num) : "";
   potonganNominal = num;
 
   const printPot = document.getElementById("txtPrintPotongan");
-  if (printPot) printPot.textContent = num ? formatDots(num) : "";
+  if (printPot) printPot.textContent = num > 0 ? formatDots(num) : "";
 
   hitungNota();
   triggerAutoSave();
@@ -1526,16 +1708,20 @@ function handlePotonganNominalInput(inputEl) {
 
 function handleResiInput(val) {
   if (!activeKapal) return;
-  activeKapal.resi = val;
+  // Sanitasi input resi (escape HTML)
+  const safeVal = sanitizeInput(val);
+  activeKapal.resi = safeVal;
   const printResi = document.getElementById("txtPrintResi") || document.querySelector(".print-resi-box");
-  if (printResi) printResi.textContent = val;
+  if (printResi) printResi.textContent = safeVal;
   triggerAutoSave();
 }
 
 function hitungNota() {
   let sub = 0;
-  notaItems.forEach(i => sub += Number(i.ongkir) || 0);
-  const bersih = sub - (potonganNominal || 0);
+  // Validasi kalkulasi subtotal ongkir non-negatif
+  notaItems.forEach(i => sub += validateOngkir(i.ongkir));
+  const safePot = validateOngkir(potonganNominal);
+  const bersih = Math.max(0, sub - safePot);
 
   const elSub = document.getElementById("txtSubtotal");
   const elTot = document.getElementById("txtTotalBersih");
@@ -1589,37 +1775,51 @@ async function eksekusiSimpanOtomatis() {
   }
 
   let sub = 0;
-  notaItems.forEach(i => sub += Number(i.ongkir) || 0);
-  const bersih = sub - (potonganNominal || 0);
-  const resiVal = document.getElementById("inpResi") ? document.getElementById("inpResi").value : "1";
+  notaItems.forEach(i => sub += validateOngkir(i.ongkir));
+  const safePotongan = validateOngkir(potonganNominal);
+  const bersih = Math.max(0, sub - safePotongan);
+  const resiVal = document.getElementById("inpResi") ? sanitizeInput(document.getElementById("inpResi").value) : "1";
+
+  const safeTanggal = validateDateFormat(activeKapal.tanggal) ? normalizeDateKey(activeKapal.tanggal) : sanitizeInput(activeKapal.tanggal);
+  const safeNamaKapal = sanitizeInput(activeKapal.nama_kapal);
+
+  const tripKey = getNormalizedTripId(safeNamaKapal, safeTanggal, activeKapal.kunci_unik);
+  activeKapal.kunci_unik = tripKey;
+  activeKapal.tanggal = safeTanggal;
+  activeKapal.nama_kapal = safeNamaKapal;
 
   // Kirim data dengan kedua format penamaan (nama/nama_pemilik, gabus/jumlah)
   // agar Apps Script mengenali field apapun tanpa membuat kolom kosong
-  const formattedItems = notaItems.map(item => ({
-    nama: item.nama || "Tanpa Nama",
-    nama_pemilik: item.nama || "Tanpa Nama",
-    gabus: Number(item.gabus) || 0,
-    jumlah: Number(item.gabus) || 0,
-    satuan: "Gabus",
-    ongkir: Number(item.ongkir) || 0,
-    kunci_unik: activeKapal.kunci_unik,
-    tanggal: activeKapal.tanggal,
-    nama_kapal: activeKapal.nama_kapal
-  }));
+  const formattedItems = notaItems.map(item => {
+    const cleanNama = sanitizeInput(item.nama || "Tanpa Nama");
+    const cleanGabus = Math.max(0, Math.floor(Number(item.gabus) || 0));
+    const cleanOngkir = validateOngkir(item.ongkir);
+    return {
+      nama: cleanNama,
+      nama_pemilik: cleanNama,
+      gabus: cleanGabus,
+      jumlah: cleanGabus,
+      satuan: "Gabus",
+      ongkir: cleanOngkir,
+      kunci_unik: tripKey,
+      tanggal: safeTanggal,
+      nama_kapal: safeNamaKapal
+    };
+  });
 
   const payload = {
     aksi: "SIMPAN_NOTA",
-    kunci_unik: activeKapal.kunci_unik,
-    tanggal: activeKapal.tanggal,
-    nama_kapal: activeKapal.nama_kapal,
-    juragan: activeKapal.juragan || "",
-    lokasi_muat: activeKapal.lokasi_muat || "DDL",
-    total_hitung: activeKapal.total_hitung || 0,
-    status_selisih: activeKapal.status_selisih || "SESUAI",
+    kunci_unik: tripKey,
+    tanggal: safeTanggal,
+    nama_kapal: safeNamaKapal,
+    juragan: sanitizeInput(activeKapal.juragan || ""),
+    lokasi_muat: sanitizeInput(activeKapal.lokasi_muat || "DDL"),
+    total_hitung: Math.max(0, Math.floor(Number(activeKapal.total_hitung) || 0)),
+    status_selisih: sanitizeInput(activeKapal.status_selisih || "SESUAI"),
     resi: resiVal,
     subtotal: sub,
     subtotal_ongkir: sub,
-    potongan: potonganNominal,
+    potongan: safePotongan,
     total_bersih: bersih,
     items: formattedItems
   };
@@ -1638,33 +1838,39 @@ async function eksekusiSimpanOtomatis() {
     }
 
     activeKapal.subtotal_ongkir = sub;
-    activeKapal.potongan = potonganNominal;
+    activeKapal.potongan = safePotongan;
     activeKapal.total_bersih = bersih;
     activeKapal.resi = resiVal;
 
     allRincian = allRincian.filter(r => {
-      if (r.kunci_unik === activeKapal.kunci_unik) {
-        return notaItems.some(ni => (ni.nama || "").trim().toLowerCase() === (r.nama_pemilik || "").trim().toLowerCase());
+      if (isSameTripRecord(r, activeKapal)) {
+        return notaItems.some(ni => sanitizeInput(ni.nama || "").toLowerCase() === sanitizeInput(r.nama_pemilik || "").toLowerCase());
       }
       return true;
     });
 
     notaItems.forEach(nItem => {
+      const cleanNama = sanitizeInput(nItem.nama || "Tanpa Nama");
+      const cleanGabus = Math.max(0, Math.floor(Number(nItem.gabus) || 0));
+      const cleanOngkir = validateOngkir(nItem.ongkir);
       let found = allRincian.find(r => 
-        (r.kunci_unik === activeKapal.kunci_unik && (r.nama_pemilik || "").trim().toLowerCase() === (nItem.nama || "").trim().toLowerCase())
+        isSameTripRecord(r, activeKapal) && sanitizeInput(r.nama_pemilik || "").toLowerCase() === cleanNama.toLowerCase()
       );
       if (found) {
-        found.ongkir = nItem.ongkir;
-        found.jumlah = nItem.gabus;
+        found.ongkir = cleanOngkir;
+        found.jumlah = cleanGabus;
+        found.kunci_unik = tripKey;
+        found.tanggal = safeTanggal;
+        found.nama_kapal = safeNamaKapal;
       } else {
         allRincian.push({
-          kunci_unik: activeKapal.kunci_unik,
-          tanggal: activeKapal.tanggal,
-          nama_kapal: activeKapal.nama_kapal,
-          nama_pemilik: nItem.nama,
-          jumlah: nItem.gabus,
+          kunci_unik: tripKey,
+          tanggal: safeTanggal,
+          nama_kapal: safeNamaKapal,
+          nama_pemilik: cleanNama,
+          jumlah: cleanGabus,
           satuan: "Gabus",
-          ongkir: nItem.ongkir
+          ongkir: cleanOngkir
         });
       }
     });

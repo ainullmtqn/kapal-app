@@ -46,13 +46,14 @@ Aplikasi web modern, responsif, dan mandiri (*standalone*) untuk pencatatan mani
 manifes-kapal-app/
 ├── index.html       # Struktur HTML semantik, modul navigasi, dan antarmuka pengguna
 ├── style.css        # Desain sistem Vanilla CSS (desktop, mobile responsive, dan @media print A6)
-├── app.js           # Logika kalkulasi, integrasi Google Apps Script, grafik tren, dan nota
 ├── chart.min.js     # Library Chart.js versi lokal (100% offline-ready tanpa ketergantungan CDN)
 ├── logo.png         # Aset logo transparan resmi PARENGGEKITA (emblem grafis murni)
 ├── .gitignore       # Konfigurasi pengabaian berkas sementara, cache, dan editor
 ├── README.md        # Dokumentasi resmi proyek
-└── assets/          # Arsip aset mentah dan berkas pendukung
-    └── LOGO.jpg     # Master file citra resolusi tinggi
+├── assets/          # Arsip aset mentah dan berkas pendukung
+│   └── LOGO.jpg     # Master file citra resolusi tinggi
+└── js/              # Modul skrip JavaScript aplikasi
+    └── app.js       # Logika kalkulasi, integrasi Google Apps Script, grafik tren, dan nota
 ```
 
 ---
