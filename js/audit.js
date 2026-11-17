@@ -3,7 +3,24 @@
 // PARENGGEKITA - SISTEM MANIFES KAPAL
 // ==========================================
 
+function initAuditView() {
+  const container = document.getElementById("tabAudit");
+  if (!container || container.innerHTML.trim() !== "") return;
+
+  container.innerHTML = `
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Audit Selisih Muatan Fisik</h2>
+          <div class="section-subtitle">Daftar kapal pelayaran dengan status muatan belum sesuai</div>
+        </div>
+      </div>
+
+      <div class="voyage-grid" id="auditList"></div>
+  `;
+}
+
 function renderAuditTab() {
+  initAuditView();
   const container = document.getElementById("auditList");
   if (!container) return;
   container.innerHTML = "";
@@ -52,3 +69,4 @@ function renderAuditTab() {
     container.appendChild(card);
   });
 }
+

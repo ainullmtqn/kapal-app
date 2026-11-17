@@ -3,7 +3,46 @@
 // PARENGGEKITA - SISTEM MANIFES KAPAL
 // ==========================================
 
+function initKapalView() {
+  const container = document.getElementById("tabKapal");
+  if (!container || container.innerHTML.trim() !== "") return;
+
+  container.innerHTML = `
+      <div class="section-header" style="margin-bottom: 0.85rem;">
+        <div>
+          <h2 class="section-title">Database Pelayaran Kapal</h2>
+          <div class="section-subtitle">Daftar seluruh manifest kedatangan kapal dan rincian muatan</div>
+        </div>
+      </div>
+
+      <div class="search-card">
+        <div class="search-input-wrap">
+          <input type="text" id="searchInput" class="search-input" placeholder="🔍 Cari nama kapal, juragan, parengge..." oninput="filterData()">
+          <button class="btn-action btn-refresh-search" onclick="tarikSemuaData()" title="Segarkan Data">
+            <svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            <span class="btn-text">Segarkan</span>
+          </button>
+        </div>
+        <div class="filter-pills-wrap" id="filterPillsWrap">
+          <div class="pill-btn active" onclick="setPillFilter('SEMUA', this)">Semua Data</div>
+          <div class="pill-btn" onclick="setPillFilter('HARI_INI', this)">Hari Ini</div>
+          <div class="pill-btn" onclick="setPillFilter('KALMAS', this)">Kalmas</div>
+          <div class="pill-btn" onclick="setPillFilter('PUMA', this)">Puma</div>
+        </div>
+      </div>
+
+      <div class="voyage-grid" id="shipCardList">
+        <div class="card" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+          Sedang memuat daftar kapal...
+        </div>
+      </div>
+  `;
+}
+
 function setPillFilter(type, el) {
+  initKapalView();
   document.querySelectorAll('#filterPillsWrap .pill-btn').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   currentFilterPill = type;
@@ -11,6 +50,7 @@ function setPillFilter(type, el) {
 }
 
 function filterData() {
+  initKapalView();
   const searchInput = document.getElementById("searchInput");
   const rawQ = searchInput ? searchInput.value : "";
   const q = sanitizeInput(rawQ).toLowerCase();
@@ -87,3 +127,4 @@ function renderDaftarKapal() {
     container.appendChild(card);
   });
 }
+

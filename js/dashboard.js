@@ -3,7 +3,184 @@
 // PARENGGEKITA - SISTEM MANIFES KAPAL
 // ==========================================
 
+function initDashboardView() {
+  const container = document.getElementById("tabDashboard");
+  if (!container || container.innerHTML.trim() !== "") return;
+
+  container.innerHTML = `
+      <!-- Banner Identitas Beranda Selaras -->
+      <div class="dashboard-hero-banner">
+        <div class="dashboard-hero-logo-wrap">
+          <img src="logo.png" alt="Logo PARENGGEKITA" class="dashboard-hero-logo">
+        </div>
+        <div class="dashboard-hero-text">
+          <div class="dashboard-hero-title">PARENGGE<span class="brand-title-accent">KITA</span><span class="brand-title-dot">.</span></div>
+          <div class="dashboard-hero-sub">Sistem Digital Manifes Kedatangan Kapal & Nota Ongkir Muatan</div>
+        </div>
+      </div>
+
+      <!-- 4 KPI Metrics Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card" onclick="switchTab('kapal')" style="cursor: pointer;" title="Buka Database Pelayaran Kapal">
+          <div class="kpi-header">
+            <span class="kpi-label">Kapal Ongkir</span>
+            <div class="kpi-icon-box kpi-icon-ship">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 20a4 4 0 0 0 8 0 4 4 0 0 0 8 0 4 4 0 0 0 4 0"/>
+                <path d="M4 18l2-7h12l2 7"/>
+                <path d="M12 4v7"/>
+                <path d="M9 7l3-3 3 3"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpiKapalOnline">0 Kapal</div>
+          <div class="kpi-sub">Pelayaran Tercatat →</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Total Muatan</span>
+            <div class="kpi-icon-box kpi-icon-cargo">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="13" width="18" height="7" rx="1.5"/>
+                <rect x="5" y="5" width="14" height="6" rx="1.5"/>
+                <line x1="3" y1="16.5" x2="21" y2="16.5"/>
+                <line x1="5" y1="8" x2="19" y2="8"/>
+                <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
+                <circle cx="12" cy="8" r="1" fill="currentColor"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpiTotalGabus">0 Gabus</div>
+          <div class="kpi-sub">Fisik Muatan Masuk</div>
+        </div>
+
+        <div class="kpi-card" onclick="switchTab('muatan')" style="cursor: pointer;" title="Buka Data Muatan Parengge">
+          <div class="kpi-header">
+            <span class="kpi-label">Kapal Parengge</span>
+            <div class="kpi-icon-box kpi-icon-parengge">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 19c2 0 3-1 5-1s3 1 5 1 3-1 5-1 3 1 5 1"/>
+                <path d="M3.5 16L5 11h14l1.5 5H3.5z"/>
+                <path d="M10 11V5l7 3-7 3z"/>
+                <line x1="6" y1="11" x2="6" y2="8"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpiTotalParengge">0</div>
+          <div class="kpi-sub">Pemilik Muatan Unik →</div>
+        </div>
+
+        <div class="kpi-card" onclick="switchTab('audit')" style="cursor: pointer;" title="Buka Audit & Selisih">
+          <div class="kpi-header">
+            <span class="kpi-label">Status Audit</span>
+            <div class="kpi-icon-box kpi-icon-audit" id="kpiAuditIconBox">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                <path d="M7 21h10"/>
+                <path d="M12 3v18"/>
+                <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpiStatusAudit" style="color: var(--success-text);">Semua Sesuai</div>
+          <div class="kpi-sub" id="kpiSubAudit">0 Selisih</div>
+        </div>
+      </div>
+
+      <!-- Alert Selisih Banner -->
+      <div class="alert-banner" id="alertBanner" style="display: none;" onclick="switchTab('audit')">
+        <div class="alert-left">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <div>
+            <div class="alert-title">Perhatian: Selisih Hitung Muatan</div>
+            <div class="alert-desc" id="alertDesc">Ditemukan kapal dengan perbedaan manifest fisik.</div>
+          </div>
+        </div>
+        <button class="btn-alert">Tinjau di Audit →</button>
+      </div>
+
+      <!-- GRAFIK TREN HARIAN KAPAL ONGKIR & MUATAN GABUS -->
+      <div class="chart-section-card" id="chartSectionCard">
+        <div class="chart-card-header">
+          <div class="chart-title-wrap">
+            <div class="chart-icon-box">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="chart-title">Grafik Harian Kapal Ongkir & Muatan Gabus</h3>
+              <p class="chart-subtitle">Statistik harian armada kapal ongkir dan volume gabus ikan per tanggal</p>
+            </div>
+          </div>
+
+          <div class="chart-controls">
+            <div class="chart-range-pills" id="chartRangePills">
+              <button type="button" class="chart-pill-btn active" onclick="setChartRange(7, this)">7 Hari</button>
+              <button type="button" class="chart-pill-btn" onclick="setChartRange(14, this)">14 Hari</button>
+              <button type="button" class="chart-pill-btn" onclick="setChartRange(30, this)">30 Hari</button>
+              <button type="button" class="chart-pill-btn" onclick="setChartRange(0, this)">Semua</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini Stats Summary Chips -->
+        <div class="chart-stat-chips" id="chartStatChips">
+          <div class="stat-chip">
+            <span class="stat-chip-label">Rata-rata Kapal</span>
+            <span class="stat-chip-val" id="statAvgKapal">0 / hari</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-label">Rata-rata Muatan</span>
+            <span class="stat-chip-val" id="statAvgGabus">0 Gabus / hari</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-label">Puncak Muatan</span>
+            <span class="stat-chip-val" id="statPeakGabus">-</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-label">Hari Operasi</span>
+            <span class="stat-chip-val" id="statTotalDays">0 Hari</span>
+          </div>
+        </div>
+
+        <!-- Legend Row -->
+        <div class="chart-legend-row">
+          <div class="legend-indicator">
+            <span class="legend-box-gabus"></span>
+            <span class="legend-text-full">Total Muatan Gabus (Gabus) — Sumbu Kiri</span>
+            <span class="legend-text-mobile">Gabus (Kiri)</span>
+          </div>
+          <div class="legend-indicator">
+            <span class="legend-line-kapal"></span>
+            <span class="legend-text-full">Jumlah Kapal Ongkir (Kapal) — Sumbu Kanan</span>
+            <span class="legend-text-mobile">Kapal (Kanan)</span>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="chart-canvas-container" id="chartCanvasContainer">
+          <canvas id="dailyShipGabusChart"></canvas>
+          <div class="chart-empty-state" id="chartEmptyState" style="display: none;">
+            <div class="chart-empty-icon">📈</div>
+            <div class="chart-empty-text">Belum ada data pelayaran untuk grafik</div>
+            <div class="chart-empty-sub">Grafik tren harian akan terisi otomatis setelah data kapal dan muatan tersedia.</div>
+          </div>
+        </div>
+      </div>
+  `;
+}
+
 function renderDashboard() {
+  initDashboardView();
   const totalKapal = allPelayaran.length;
   const totalGabus = allPelayaran.reduce((sum, p) => sum + (Number(p.total_hitung) || 0), 0);
   
@@ -379,3 +556,4 @@ function renderDailyChart() {
     }
   });
 }
+

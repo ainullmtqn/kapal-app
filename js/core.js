@@ -452,3 +452,4 @@ function stopRealtimeSync() {
     autoSyncTimer = null;
   }
 }
+

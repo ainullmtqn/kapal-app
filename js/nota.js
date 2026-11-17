@@ -3,7 +3,39 @@
 // PARENGGEKITA - SISTEM MANIFES KAPAL
 // ==========================================
 
+function initNotaModalView() {
+  const container = document.getElementById("notaModal");
+  if (!container || container.innerHTML.trim() !== "") return;
+
+  container.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-top-bar no-print">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="font-weight: 700; font-size: 0.95rem;">Nota Ongkir (A6)</span>
+          <span id="saveIndicator" class="save-status-pill">✓ Tersimpan</span>
+        </div>
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+          <button class="btn-action" onclick="window.print()" style="background: var(--success-text); color: #fff;">🖨️ Cetak A6</button>
+          <button class="btn-close" onclick="tutupNota()">✕</button>
+        </div>
+      </div>
+
+      <!-- BLANGKO NOTA KONTAN -->
+      <div id="notaPrintArea">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div id="btnTambahBarisManualWrap" class="no-print" style="margin-top: 0.75rem; text-align: center;">
+        <button type="button" class="btn-action" onclick="tambahBarisManual()" style="background: #475569; font-size: 0.78rem; padding: 0.45rem 0.85rem;">
+          ➕ Tambah Baris Kapal Parengge Manual
+        </button>
+      </div>
+    </div>
+  `;
+}
+
 function bukaNota(kunciUnik) {
+  initNotaModalView();
   if (!kunciUnik && kunciUnik !== 0) return;
   const targetKey = String(kunciUnik).trim().toLowerCase();
 
@@ -489,3 +521,4 @@ async function eksekusiSimpanOtomatis() {
     updateSaveIndicator("error");
   }
 }
+

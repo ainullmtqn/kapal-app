@@ -3,11 +3,31 @@
 // PARENGGEKITA - SISTEM MANIFES KAPAL
 // ==========================================
 
+function initMuatanView() {
+  const container = document.getElementById("tabMuatan");
+  if (!container || container.innerHTML.trim() !== "") return;
+
+  container.innerHTML = `
+      <div class="search-card">
+        <div class="section-header" style="margin-bottom: 0.5rem;">
+          <h2 class="section-title">Muatan Kapal Parengge (<span id="countMuatan">0</span> Unik)</h2>
+        </div>
+        <div class="search-input-wrap">
+          <input type="text" id="searchMuatanInput" class="search-input" placeholder="🔍 Cari nama kapal parengge / kapal ongkir..." oninput="filterParenggeTab(this.value)">
+        </div>
+      </div>
+
+      <div class="parengge-grid" id="allMuatanList"></div>
+  `;
+}
+
 function filterParenggeTab(query) {
+  initMuatanView();
   renderSemuaMuatan(query);
 }
 
 function renderSemuaMuatan(searchQuery = "") {
+  initMuatanView();
   const container = document.getElementById("allMuatanList");
   if (!container) return;
   container.innerHTML = "";
@@ -101,3 +121,4 @@ function renderSemuaMuatan(searchQuery = "") {
     container.appendChild(card);
   });
 }
+
