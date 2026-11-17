@@ -590,7 +590,7 @@ body::-webkit-scrollbar,
 }
 
 /* ============================================================== */
-/* DASHBOARD DAILY CHART (KAPAL PENGANGKUT & MUATAN GABUS)       */
+/* DASHBOARD DAILY CHART (KAPAL ONGKIR & MUATAN GABUS)          */
 /* ============================================================== */
 .chart-section-card {
   background: var(--bg-surface);

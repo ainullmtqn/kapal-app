@@ -824,7 +824,7 @@ function renderDashboard() {
 }
 
 // ==========================================
-// GRAFIK HARIAN KAPAL PENGANGKUT & GABUS
+// GRAFIK HARIAN KAPAL ONGKIR & GABUS
 // ==========================================
 
 function formatChartDateShort(dKey) {
@@ -886,7 +886,7 @@ function renderDailyChart() {
     return;
   }
 
-  // Agregasi harian: Jumlah kapal pengangkut dan total gabus per tanggal
+  // Agregasi harian: Jumlah kapal ongkir dan total gabus per tanggal
   const dateMap = {};
   sourceList.forEach(p => {
     const dKey = normalizeDateKey(p.tanggal);
@@ -925,7 +925,6 @@ function renderDailyChart() {
   const labels = sortedDates.map(dKey => formatChartDateShort(dKey));
   const gabusData = sortedDates.map(dKey => dateMap[dKey].totalGabus);
   const kapalData = sortedDates.map(dKey => dateMap[dKey].kapalList.length);
-  const shipNamesList = sortedDates.map(dKey => dateMap[dKey].kapalList);
   const fullDatesList = sortedDates.map(dKey => formatChartDateLong(dKey));
 
   // Hitung metrik ringkasan
@@ -957,7 +956,6 @@ function renderDailyChart() {
     dailyChartInstance.data.labels = labels;
     dailyChartInstance.data.datasets[0].data = gabusData;
     dailyChartInstance.data.datasets[1].data = kapalData;
-    dailyChartInstance.data.datasets[0].customShipNames = shipNamesList;
     dailyChartInstance.data.datasets[0].customFullDates = fullDatesList;
     dailyChartInstance.update();
     return;
@@ -984,12 +982,11 @@ function renderDailyChart() {
           borderSkipped: false,
           maxBarThickness: isMobile ? 22 : 42,
           order: 2,
-          customShipNames: shipNamesList,
           customFullDates: fullDatesList
         },
         {
           type: 'line',
-          label: 'Jumlah Kapal Pengangkut',
+          label: 'Jumlah Kapal Ongkir',
           data: kapalData,
           yAxisID: 'yKapal',
           borderColor: '#ea580c',
@@ -1049,17 +1046,7 @@ function renderDailyChart() {
                 return ` 📦 Muatan Gabus: ${formatDots(context.parsed.y)} Gabus`;
               }
               if (context.dataset.yAxisID === 'yKapal') {
-                const idx = context.dataIndex;
-                const ships = context.chart.data.datasets[0].customShipNames ? context.chart.data.datasets[0].customShipNames[idx] : [];
-                let shipStr = "";
-                if (ships && ships.length > 0) {
-                  if (ships.length <= 3) {
-                    shipStr = ` (${ships.join(', ')})`;
-                  } else {
-                    shipStr = ` (${ships.slice(0, 2).join(', ')} +${ships.length - 2} kapal)`;
-                  }
-                }
-                return ` 🚢 Kapal Pengangkut: ${context.parsed.y} Kapal${shipStr}`;
+                return ` 🚢 Kapal Ongkir: ${formatDots(context.parsed.y)} Kapal`;
               }
               return ` ${context.dataset.label}: ${context.parsed.y}`;
             }
@@ -1570,7 +1557,7 @@ function renderBlangkoNota() {
 
       <table class="info-table">
         <tr>
-          <td class="lbl">Kapal Pengangkut</td>
+          <td class="lbl">Kapal Ongkir</td>
           <td class="col">:</td>
           <td class="val">${escapeHtml(activeKapal.nama_kapal)}</td>
         </tr>

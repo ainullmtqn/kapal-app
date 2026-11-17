@@ -1,6 +1,6 @@
 # PARENGGEKITA — Sistem Manifes Kedatangan Kapal & Nota Ongkir Muatan
 
-Aplikasi web modern, responsif, dan mandiri (*standalone*) untuk pencatatan manifes logistik kedatangan kapal pengangkut, rekapitulasi muatan fisik gabus ikan kapal parengge, audit selisih muatan, serta penerbitan nota kontan ongkir presisi cetak kertas A6 ber-watermark resmi.
+Aplikasi web modern, responsif, dan mandiri (*standalone*) untuk pencatatan manifes logistik kedatangan kapal ongkir, rekapitulasi muatan fisik gabus ikan kapal parengge, audit selisih muatan, serta penerbitan nota kontan ongkir presisi cetak kertas A6 ber-watermark resmi.
 
 ---
 
@@ -9,11 +9,11 @@ Aplikasi web modern, responsif, dan mandiri (*standalone*) untuk pencatatan mani
 1. **📊 Beranda & Grafik Tren Harian (Dashboard)**
    - 4 Kartu Metrik KPI Real-Time: **Kapal Ongkir**, **Total Muatan (Gabus)**, **Kapal Parengge**, dan **Status Audit**.
    - Banner identitas resmi dengan tipografi *Comfortaa* yang selaras dengan logo.
-   - Grafik interaktif tren harian volume muatan gabus dan armada kapal pengangkut dengan filter rentang waktu (7 Hari, 14 Hari, 30 Hari, Semua).
+   - Grafik interaktif tren harian volume muatan gabus dan armada kapal ongkir dengan filter rentang waktu (7 Hari, 14 Hari, 30 Hari, Semua).
    - Tampilan grafik yang dioptimalkan khusus untuk layar ponsel (*mobile-friendly*), bebas tumpang-tindih sumbu dan ringkas.
 
 2. **🚢 Database Pelayaran (Kapal Ongkir)**
-   - Pencatatan data pelayaran kapal pengangkut, nama juragan, tanggal berlayar, dan nomor resi.
+   - Pencatatan data pelayaran kapal ongkir, nama juragan, tanggal berlayar, dan nomor resi.
    - Filter pill cepat berdasarkan lokasi muat: **Semua**, **Kalmas**, dan **DDL**.
    - Input pencarian langsung (*instant real-time search*).
    - Akses cepat ke rincian muatan dan cetak nota blangko kontan.
