@@ -183,12 +183,12 @@ function bukaModalAuthPengelola(targetTab = 'dashboard') {
       <div style="font-size: 2.2rem; margin-bottom: 0.35rem;">🔐</div>
       <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.25rem;">Portal Pengelola</h3>
       <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.4;">
-        Masukkan kata sandi pengelola untuk membuka administrasi & database kapal.
+        Masukkan kata sandi pengelola (Admin atau Super Admin) untuk membuka administrasi & database kapal.
       </p>
 
       <form id="formAuthPengelola" onsubmit="verifikasiPasswordPengelola(event)">
         <div style="position: relative; margin-bottom: 0.5rem;">
-          <input type="password" id="inputPasswordPengelola" class="search-input" placeholder="Kata sandi pengelola..." required style="width: 100%; padding-right: 42px; font-size: 0.95rem; text-align: center; letter-spacing: 2px;" autocomplete="current-password">
+          <input type="password" id="inputPasswordPengelola" class="search-input" placeholder="Kata sandi..." required style="width: 100%; padding-right: 42px; font-size: 0.95rem; text-align: center; letter-spacing: 2px;" autocomplete="current-password">
           <button type="button" class="btn-addon-eye" onclick="togglePasswordVisibility('inputPasswordPengelola', this)" title="Tampilkan sandi" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px; font-size: 1rem;">
             👁️
           </button>
@@ -237,34 +237,90 @@ function togglePasswordVisibility(inputId, btn) {
   }
 }
 
+function updateAdminLockIndicator() {
+  const btnLock = document.getElementById("btnLockAdmin");
+  const role = sessionStorage.getItem("ADMIN_ROLE");
+  const isAuth = sessionStorage.getItem("IS_ADMIN_AUTH") === "true";
+  if (btnLock) {
+    if (isAuth) {
+      if (role === "super_admin") {
+        btnLock.title = "👑 Super Admin Aktif (Klik untuk Kunci Portal)";
+        btnLock.style.color = "#0284c7";
+      } else {
+        btnLock.title = "🛡️ Admin Aktif (Klik untuk Kunci Portal)";
+        btnLock.style.color = "var(--ocean)";
+      }
+    } else {
+      btnLock.title = "Portal Pengelola Terkunci";
+      btnLock.style.color = "#94a3b8";
+    }
+  }
+}
+
 function verifikasiPasswordPengelola(e) {
   if (e && e.preventDefault) e.preventDefault();
   const inp = document.getElementById("inputPasswordPengelola");
   const errBox = document.getElementById("authErrorMessage");
   const enteredPass = (inp ? inp.value : "").trim();
 
-  const savedPass = localStorage.getItem("APP_ADMIN_PASSWORD") || "parengge2026";
+  // Ambil kata sandi yang tersimpan, atau inisialisasi default bawaan:
+  // Super Admin: 0NGKIR
+  // Admin Biasa: PAONGKIR
+  let superPass = localStorage.getItem("APP_SUPER_ADMIN_PASSWORD");
+  if (!superPass) {
+    superPass = "0NGKIR";
+    localStorage.setItem("APP_SUPER_ADMIN_PASSWORD", "0NGKIR");
+  }
 
-  if (enteredPass === savedPass || enteredPass === "parengge2026" || enteredPass === "admin123") {
+  let adminPass = localStorage.getItem("APP_ADMIN_PASSWORD");
+  if (!adminPass || adminPass === "parengge2026") {
+    adminPass = "PAONGKIR";
+    localStorage.setItem("APP_ADMIN_PASSWORD", "PAONGKIR");
+  }
+
+  const cleanEntered = enteredPass.toUpperCase();
+  const cleanSuper = superPass.trim().toUpperCase();
+  const cleanAdmin = adminPass.trim().toUpperCase();
+
+  // 1. Verifikasi Super Admin (0NGKIR) -> Hak akses penuh + Bisa ubah kata sandi
+  if (cleanEntered === cleanSuper) {
     sessionStorage.setItem("IS_ADMIN_AUTH", "true");
+    sessionStorage.setItem("ADMIN_ROLE", "super_admin");
     tutupModalAuthPengelola();
-    showSecurityToast("✓ Akses Pengelola terverifikasi.");
+    showSecurityToast("👑 Berhasil masuk sebagai Super Admin.");
+    updateAdminLockIndicator();
     const dest = pendingAdminTargetTab || 'dashboard';
     switchTab(dest);
-  } else {
-    if (errBox) errBox.style.display = "block";
-    if (inp) {
-      inp.select();
-      inp.focus();
-    }
+    return;
+  }
+
+  // 2. Verifikasi Admin Biasa (PAONGKIR) -> Akses pengelola, tidak bisa ubah kata sandi
+  if (cleanEntered === cleanAdmin) {
+    sessionStorage.setItem("IS_ADMIN_AUTH", "true");
+    sessionStorage.setItem("ADMIN_ROLE", "admin");
+    tutupModalAuthPengelola();
+    showSecurityToast("🛡️ Berhasil masuk sebagai Admin.");
+    updateAdminLockIndicator();
+    const dest = pendingAdminTargetTab || 'dashboard';
+    switchTab(dest);
+    return;
+  }
+
+  // Gagal
+  if (errBox) errBox.style.display = "block";
+  if (inp) {
+    inp.select();
+    inp.focus();
   }
 }
 
 function kunciPortalPengelola() {
   sessionStorage.removeItem("IS_ADMIN_AUTH");
+  sessionStorage.removeItem("ADMIN_ROLE");
   sessionStorage.setItem("LAST_ACTIVE_TAB", "warta");
   localStorage.setItem("LAST_ACTIVE_TAB", "warta");
   showSecurityToast("🔒 Portal Pengelola telah dikunci.");
+  updateAdminLockIndicator();
   switchTab('warta');
 }
 
@@ -359,8 +415,12 @@ function switchTab(tabName, el) {
     if (typeof renderMasterKapalList === "function") {
       renderMasterKapalList();
     }
+    if (typeof renderAdminPasswordSection === "function") {
+      renderAdminPasswordSection();
+    }
   }
 
+  updateAdminLockIndicator();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 

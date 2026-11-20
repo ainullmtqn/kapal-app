@@ -55,25 +55,9 @@ function initSettingView() {
           <!-- Diisi via renderMasterKapalList() -->
         </div>
 
-        <!-- Keamanan & Kata Sandi Pengelola -->
-        <div style="border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 1.75rem;">
-          <div style="font-size: 0.84rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
-            🔐 Kata Sandi Akses Pengelola
-          </div>
-          <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.45;">
-            Ubah kata sandi yang digunakan saat masuk ke portal administrasi & database kapal (Kata sandi bawaan: <code>parengge2026</code>).
-          </p>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; max-width: 440px; margin-bottom: 0.75rem;">
-            <input type="password" id="inputNewAdminPassword" class="search-input" placeholder="Ketik kata sandi baru..." style="flex: 1; min-width: 200px; font-size: 0.82rem;">
-            <button type="button" class="btn-action" onclick="simpanPasswordPengelolaBaru()" style="background: var(--ocean); font-size: 0.78rem; padding: 0.55rem 1rem;">
-              💾 Simpan Sandi
-            </button>
-          </div>
-          <div>
-            <button type="button" class="btn-action" onclick="kunciPortalPengelola()" style="background: #e2e8f0; color: var(--text-primary); font-size: 0.75rem; padding: 0.4rem 0.85rem;">
-              🔒 Kunci Portal Sekarang
-            </button>
-          </div>
+        <!-- Keamanan & Hak Akses Kata Sandi Pengelola (Super Admin & Admin) -->
+        <div id="sectionPasswordPengelola" style="border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 1.75rem;">
+          <!-- Diisi dinamis via renderAdminPasswordSection() -->
         </div>
 
         <!-- Pengelolaan Cache Lokal -->
@@ -93,6 +77,9 @@ function initSettingView() {
     if (typeof renderMasterKapalList === 'function') {
       renderMasterKapalList();
     }
+    if (typeof renderAdminPasswordSection === 'function') {
+      renderAdminPasswordSection();
+    }
   }, 10);
 }
 
@@ -100,6 +87,9 @@ function initSettingView() {
 function bukaSettingHalaman() {
   if (typeof renderMasterKapalList === 'function') {
     renderMasterKapalList();
+  }
+  if (typeof renderAdminPasswordSection === 'function') {
+    renderAdminPasswordSection();
   }
 }
 
@@ -115,17 +105,161 @@ function bersihkanCache() {
   }
 }
 
-function simpanPasswordPengelolaBaru() {
-  const inp = document.getElementById("inputNewAdminPassword");
-  const val = (inp ? inp.value : "").trim();
-  if (!val || val.length < 4) {
-    alert("Kata sandi baru minimal 4 karakter.");
+// ==============================================================
+// PENGELOLAAN KATA SANDI (SUPER ADMIN & ADMIN BIASA)
+// ==============================================================
+
+function renderAdminPasswordSection() {
+  const container = document.getElementById("sectionPasswordPengelola");
+  if (!container) return;
+
+  const isAuth = sessionStorage.getItem("IS_ADMIN_AUTH") === "true";
+  const role = sessionStorage.getItem("ADMIN_ROLE");
+
+  if (!isAuth) {
+    container.innerHTML = `
+      <div style="font-size: 0.84rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+        🔐 Keamanan & Akses Pengelola
+      </div>
+      <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+        Sesi pengelola belum aktif. Silakan masuk terlebih dahulu untuk mengakses menu ini.
+      </p>
+      <button type="button" class="btn-action" onclick="bukaModalAuthPengelola('setting')" style="background: var(--ocean); font-size: 0.78rem; padding: 0.55rem 1.1rem;">
+        🔓 Masuk Portal Pengelola
+      </button>
+    `;
     return;
   }
-  localStorage.setItem("APP_ADMIN_PASSWORD", val);
-  if (inp) inp.value = "";
-  showSecurityToast("✓ Kata sandi pengelola berhasil diperbarui!");
-  alert("✓ Kata sandi pengelola berhasil diubah!");
+
+  // JIKA LOGIN SEBAGAI SUPER ADMIN (DAPAT UBAH SANDI)
+  if (role === "super_admin") {
+    const currentAdminPass = localStorage.getItem("APP_ADMIN_PASSWORD") || "PAONGKIR";
+    const currentSuperPass = localStorage.getItem("APP_SUPER_ADMIN_PASSWORD") || "0NGKIR";
+
+    container.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 0.4rem;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.15rem;">👑</span>
+          <span style="font-size: 0.88rem; font-weight: 800; color: var(--text-primary);">Pengaturan Kata Sandi Sistem</span>
+          <span style="display: inline-block; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 800; border: 1px solid #bae6fd;">SUPER ADMIN</span>
+        </div>
+      </div>
+      <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 1.1rem; line-height: 1.45;">
+        Sebagai <strong>Super Admin</strong>, Anda memiliki hak istimewa penuh untuk mengatur dan mengganti kata sandi login Admin Biasa maupun Super Admin.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.1rem;">
+        <!-- Card 1: Ganti Sandi Admin Biasa -->
+        <div style="background: var(--card-bg, #ffffff); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary);">🛡️ Sandi Admin Biasa</span>
+            <span style="font-size: 0.68rem; color: var(--text-muted); background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">Saat ini: <strong>${escapeHtml(currentAdminPass)}</strong></span>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.65rem; line-height: 1.35;">
+            Untuk petugas pelayaran & admin operasional (tidak memiliki hak untuk mengubah kata sandi).
+          </p>
+          <div style="position: relative; margin-bottom: 0.5rem;">
+            <input type="password" id="inputNewAdminPassword" class="search-input" placeholder="Ketik kata sandi Admin baru..." style="width: 100%; font-size: 0.82rem; padding-right: 36px;">
+            <button type="button" onclick="togglePasswordVisibility('inputNewAdminPassword', this)" title="Tampilkan sandi" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 0.9rem;">👁️</button>
+          </div>
+          <button type="button" class="btn-action" onclick="simpanSandiRole('admin')" style="background: var(--ocean); font-size: 0.76rem; padding: 0.45rem 0.9rem; width: 100%; justify-content: center; font-weight: 700;">
+            💾 Simpan Sandi Admin
+          </button>
+        </div>
+
+        <!-- Card 2: Ganti Sandi Super Admin -->
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">👑 Sandi Super Admin</span>
+            <span style="font-size: 0.68rem; color: #0284c7; background: #e0f2fe; padding: 2px 6px; border-radius: 4px; font-weight: 800; border: 1px solid #bae6fd;">Saat ini: <strong>${escapeHtml(currentSuperPass)}</strong></span>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.65rem; line-height: 1.35;">
+            Tingkat otoritas tertinggi untuk mengontrol penuh seluruh kata sandi pengelola.
+          </p>
+          <div style="position: relative; margin-bottom: 0.5rem;">
+            <input type="password" id="inputNewSuperPassword" class="search-input" placeholder="Ketik kata sandi Super Admin baru..." style="width: 100%; font-size: 0.82rem; padding-right: 36px;">
+            <button type="button" onclick="togglePasswordVisibility('inputNewSuperPassword', this)" title="Tampilkan sandi" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 0.9rem;">👁️</button>
+          </div>
+          <button type="button" class="btn-action" onclick="simpanSandiRole('super')" style="background: #0284c7; font-size: 0.76rem; padding: 0.45rem 0.9rem; width: 100%; justify-content: center; font-weight: 800;">
+            💾 Simpan Sandi Super Admin
+          </button>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button type="button" class="btn-action" onclick="kunciPortalPengelola()" style="background: #e2e8f0; color: var(--text-primary); font-size: 0.75rem; padding: 0.45rem 0.95rem;">
+          🔒 Kunci Portal Sekarang
+        </button>
+      </div>
+    `;
+  } else {
+    // JIKA LOGIN SEBAGAI ADMIN BIASA (TIDAK DAPAT UBAH SANDI)
+    container.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 0.4rem;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.15rem;">🛡️</span>
+          <span style="font-size: 0.88rem; font-weight: 800; color: var(--text-primary);">Keamanan & Hak Akses Pengelola</span>
+          <span style="display: inline-block; background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; border: 1px solid #cbd5e1;">ADMIN BIASA</span>
+        </div>
+      </div>
+
+      <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 0.85rem 1rem; margin-top: 0.5rem; margin-bottom: 0.85rem; display: flex; gap: 12px; align-items: flex-start;">
+        <span style="font-size: 1.35rem; line-height: 1;">🔒</span>
+        <div>
+          <div style="font-size: 0.82rem; font-weight: 800; color: #92400e; margin-bottom: 0.25rem;">
+            Fitur Perubahan Kata Sandi Dibatasi
+          </div>
+          <div style="font-size: 0.76rem; color: #78350f; line-height: 1.45;">
+            Anda masuk dengan role <strong>Admin Biasa</strong>. Anda dapat mengelola Master Data & Cache, namun <strong>hanya Super Admin (login dengan kata sandi <code>0NGKIR</code>)</strong> yang memiliki wewenang untuk mengubah kata sandi sistem.
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" class="btn-action" onclick="kunciPortalPengelola()" style="background: #e2e8f0; color: var(--text-primary); font-size: 0.75rem; padding: 0.45rem 0.95rem;">
+          🔒 Kunci Portal Sekarang
+        </button>
+      </div>
+    `;
+  }
+}
+
+function simpanSandiRole(type) {
+  const role = sessionStorage.getItem("ADMIN_ROLE");
+  if (role !== "super_admin") {
+    alert("⛔ Akses Ditolak: Hanya Super Admin yang berhak mengubah kata sandi.");
+    return;
+  }
+
+  if (type === 'admin') {
+    const inp = document.getElementById("inputNewAdminPassword");
+    const val = (inp ? inp.value : "").trim();
+    if (!val || val.length < 3) {
+      alert("Kata sandi Admin baru minimal 3 karakter.");
+      return;
+    }
+    localStorage.setItem("APP_ADMIN_PASSWORD", val);
+    if (inp) inp.value = "";
+    showSecurityToast("✓ Kata sandi Admin berhasil diubah!");
+    renderAdminPasswordSection();
+    alert("✓ Sukses! Kata sandi Admin berhasil diperbarui menjadi: " + val);
+  } else if (type === 'super') {
+    const inp = document.getElementById("inputNewSuperPassword");
+    const val = (inp ? inp.value : "").trim();
+    if (!val || val.length < 3) {
+      alert("Kata sandi Super Admin baru minimal 3 karakter.");
+      return;
+    }
+    localStorage.setItem("APP_SUPER_ADMIN_PASSWORD", val);
+    if (inp) inp.value = "";
+    showSecurityToast("✓ Kata sandi Super Admin berhasil diubah!");
+    renderAdminPasswordSection();
+    alert("✓ Sukses! Kata sandi Super Admin berhasil diperbarui menjadi: " + val);
+  }
+}
+
+function simpanPasswordPengelolaBaru() {
+  simpanSandiRole('admin');
 }
 
 // ==============================================================
