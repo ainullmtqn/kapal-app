@@ -17,6 +17,7 @@
 const SPREADSHEET_ID = '1w4StmnR78nlq3zRmjXnGJ559EGK3ZqF_X5KeqIQSMeo';
 const SPREADSHEET_NAME = 'Database Manifes Kapal';
 const TIMEZONE = 'Asia/Jakarta';
+const APP_SECRET_TOKEN = 'PRG_KITA_SEC_2026_98F7A';
 
 const SHEET_REKAP = 'Rekap_Ongkir';
 const SHEET_MUATAN = 'Rincian_Muatan';
@@ -164,6 +165,17 @@ function doPost(e) {
     const payload = JSON.parse(rawData);
     const ss = getSpreadsheet();
     const sheets = getSpreadsheetSheets(ss);
+
+    // Proteksi Keamanan: Verifikasi Token Otorisasi untuk Aksi Web App
+    const clientAuth = payload.auth || payload.key || '';
+    if (payload.aksi === 'SIMPAN_NOTA' || payload.aksi === 'UPDATE_MASTER_KAPAL') {
+      if (clientAuth !== APP_SECRET_TOKEN) {
+        return jsonResponse({
+          status: 'error',
+          pesan: 'Akses Ditolak: Kunci token otentikasi tidak valid atau tidak disertakan.'
+        });
+      }
+    }
 
     // 1. Aksi EDIT_MUATAN (Bot: Update gabus parengge & audit ulang kapal)
     if (payload.aksi === 'EDIT_MUATAN') {
@@ -696,10 +708,22 @@ function handleResetData(sheets, data) {
 function doGet(e) {
   try {
     const params = e.parameter || {};
+    const clientAuth = params.auth || params.key || '';
     const tanggal = params.tanggal ? formatDateIso(params.tanggal) : getActiveDateWIB();
     const targetKapal = (params.kapal || '').trim().toUpperCase();
     const targetAgen = (params.agen || '').trim().toUpperCase();
     const aksi = params.aksi || '';
+
+    // Proteksi Keamanan: Pembacaan penuh database wajib menyertakan token otentikasi resmi
+    // Permintaan spesifik dari bot (target kapal / agen) tetap diizinkan
+    if (!targetKapal && !targetAgen) {
+      if (clientAuth !== APP_SECRET_TOKEN) {
+        return jsonResponse({
+          status: 'error',
+          pesan: 'Akses Ditolak: Diperlukan kunci otentikasi resmi untuk membaca database.'
+        });
+      }
+    }
 
     const ss = getSpreadsheet();
     const sheets = getSpreadsheetSheets(ss);

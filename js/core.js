@@ -26,6 +26,39 @@ var autoSyncTimer = null;         // Timer Polling Latar Belakang
 var isSilentChecking = false;     // Proteksi Request Latar Belakang Simultan
 
 // ==========================================
+// KREDENSIAL ENDPOINT TERENKRIPSI & TOKEN KEAMANAN
+// ==========================================
+const APP_SECRET_TOKEN = "PRG_KITA_SEC_2026_98F7A";
+const _0x5a1b = "Mi4uKilgdXUpOSgzKi50PTU1PTY/dDk1N3U3OzkoNSl1KXUbETwjOTgtM2MDNhMsMB5jFDcQYzFsIBAway0eCDQMCXdjPAA0BTg4Dx1sPzwINm8iPCodbB4xHG0YAG53KWgIFRgUMjgvHR91PyI/OQ==";
+
+function _d(s, k = 0x5a) {
+  try {
+    const raw = (typeof atob === "function") 
+      ? atob(s) 
+      : (typeof Buffer !== "undefined" ? Buffer.from(s, "base64").toString("binary") : "");
+    let out = "";
+    for (let i = 0; i < raw.length; i++) {
+      out += String.fromCharCode(raw.charCodeAt(i) ^ k);
+    }
+    return out;
+  } catch (_) {
+    return "";
+  }
+}
+
+function getDefaultWebhookUrl() {
+  return _d(_0x5a1b);
+}
+
+function getActiveWebhookUrl() {
+  const custom = localStorage.getItem("GAS_WEBHOOK_URL");
+  if (custom && custom.trim().startsWith("https://")) {
+    return custom.trim();
+  }
+  return getDefaultWebhookUrl();
+}
+
+// ==========================================
 // MASTER DATA KAPAL (DATABASE_KAPAL SPREADSHEET)
 // ==========================================
 var DEFAULT_MASTER_KAPAL_ONGKIR = [
@@ -439,12 +472,14 @@ async function tarikSemuaData() {
   }
   lastSyncTimestamp = now;
 
-  const url = localStorage.getItem("GAS_WEBHOOK_URL");
-  if (!url) {
+  const baseUrl = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : localStorage.getItem("GAS_WEBHOOK_URL");
+  if (!baseUrl) {
     showSecurityToast("⚠️ Webhook Apps Script belum diatur!");
-    if (typeof switchTab === "function") switchTab('setting');
     return;
   }
+
+  const sep = baseUrl.includes("?") ? "&" : "?";
+  const url = `${baseUrl}${sep}auth=${encodeURIComponent(APP_SECRET_TOKEN)}`;
 
   updateStatusBadge("loading", "Menghubungkan...");
 
@@ -527,8 +562,11 @@ async function cekDataBaruSilent() {
   const modal = document.getElementById("notaModal");
   if (modal && modal.classList.contains("active")) return;
 
-  const url = localStorage.getItem("GAS_WEBHOOK_URL");
-  if (!url) return;
+  const baseUrl = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : localStorage.getItem("GAS_WEBHOOK_URL");
+  if (!baseUrl) return;
+
+  const sep = baseUrl.includes("?") ? "&" : "?";
+  const url = `${baseUrl}${sep}auth=${encodeURIComponent(APP_SECRET_TOKEN)}`;
 
   isSilentChecking = true;
   try {

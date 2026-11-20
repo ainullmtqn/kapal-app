@@ -421,7 +421,7 @@ function triggerAutoSave() {
 }
 
 async function eksekusiSimpanOtomatis() {
-  const url = localStorage.getItem("GAS_WEBHOOK_URL");
+  const url = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : localStorage.getItem("GAS_WEBHOOK_URL");
   if (!url || !activeKapal) return;
 
   if (!notaItems || notaItems.length === 0) {
@@ -478,6 +478,7 @@ async function eksekusiSimpanOtomatis() {
   });
 
   const payload = {
+    auth: typeof APP_SECRET_TOKEN !== "undefined" ? APP_SECRET_TOKEN : "",
     aksi: "SIMPAN_NOTA",
     kunci_unik: tripKey,
     tanggal: safeTanggal,

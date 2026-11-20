@@ -724,7 +724,7 @@ function hapusMasterKapal(index) {
 }
 
 async function simpanMasterKeSheets() {
-  const url = localStorage.getItem('GAS_WEBHOOK_URL');
+  const url = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : localStorage.getItem('GAS_WEBHOOK_URL');
   if (!url) {
     alert('URL Webhook Google Apps Script belum diatur! Masukkan URL webhook di bagian atas terlebih dahulu.');
     return;
@@ -750,6 +750,7 @@ async function simpanMasterKeSheets() {
 
   try {
     const payload = {
+      auth: typeof APP_SECRET_TOKEN !== "undefined" ? APP_SECRET_TOKEN : "",
       aksi: 'UPDATE_MASTER_KAPAL',
       master_kapal_ongkir: MASTER_KAPAL_ONGKIR,
       master_kapal_parengge: MASTER_KAPAL_PARENGGE
@@ -782,7 +783,7 @@ async function simpanMasterKeSheets() {
 }
 
 async function sinkronkanMasterDariSheets() {
-  const url = localStorage.getItem('GAS_WEBHOOK_URL');
+  const url = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : localStorage.getItem('GAS_WEBHOOK_URL');
   if (!url) {
     alert('URL Webhook Google Apps Script belum diatur! Masukkan URL webhook di bagian atas terlebih dahulu.');
     return;
@@ -796,7 +797,8 @@ async function sinkronkanMasterDariSheets() {
   }
 
   try {
-    const targetUrl = url.includes('?') ? `${url}&aksi=GET_MASTER_DATA` : `${url}?aksi=GET_MASTER_DATA`;
+    const sep = url.includes('?') ? '&' : '?';
+    const targetUrl = `${url}${sep}aksi=GET_MASTER_DATA&auth=${encodeURIComponent(typeof APP_SECRET_TOKEN !== "undefined" ? APP_SECRET_TOKEN : "")}`;
     const res = await fetch(targetUrl);
     if (!res.ok) throw new Error('HTTP Status ' + res.status);
     const data = await res.json();

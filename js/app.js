@@ -250,10 +250,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Inisialisasi Proteksi Webhook
-  const savedWebhook = localStorage.getItem("GAS_WEBHOOK_URL") || "";
+  const activeWebhook = (typeof getActiveWebhookUrl === "function") 
+    ? getActiveWebhookUrl() 
+    : (localStorage.getItem("GAS_WEBHOOK_URL") || "");
   const inpWebhook = document.getElementById("webhookInput");
   if (inpWebhook) {
-    inpWebhook.value = savedWebhook;
+    inpWebhook.value = activeWebhook;
     inpWebhook.type = "password";
     inpWebhook.readOnly = true;
     inpWebhook.classList.add("input-locked");
@@ -343,8 +345,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 4. Tarik data terbaru dari Google Apps Script
-  if (savedWebhook) {
+  // 4. Tarik data terbaru dari Google Apps Script secara otomatis
+  const activeUrl = (typeof getActiveWebhookUrl === "function") 
+    ? getActiveWebhookUrl() 
+    : (localStorage.getItem("GAS_WEBHOOK_URL") || "");
+  if (activeUrl) {
     if (typeof tarikSemuaData === "function") tarikSemuaData();
   } else if (allPelayaran.length === 0) {
     if (typeof updateStatusBadge === "function") {
@@ -359,7 +364,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Periksa seketika saat pengguna membuka kembali tab browser
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && localStorage.getItem("GAS_WEBHOOK_URL")) {
+    if (!document.hidden && typeof getActiveWebhookUrl === "function" && getActiveWebhookUrl()) {
       if (typeof cekDataBaruSilent === "function") cekDataBaruSilent();
     }
   });
