@@ -8,6 +8,7 @@ function initNotaModalView() {
   if (!container || container.innerHTML.trim() !== "") return;
 
   container.innerHTML = `
+    <datalist id="listMasterParengge"></datalist>
     <div class="modal-content">
       <div class="modal-top-bar no-print">
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -32,28 +33,38 @@ function initNotaModalView() {
       </div>
     </div>
   `;
+
+  updateMasterParenggeDatalist();
+}
+
+function updateMasterParenggeDatalist() {
+  const dl = document.getElementById("listMasterParengge");
+  if (!dl) return;
+  const list = Array.isArray(MASTER_KAPAL_PARENGGE) ? MASTER_KAPAL_PARENGGE : [];
+  dl.innerHTML = list.map(p => `<option value="${escapeHtml(p)}">`).join("");
 }
 
 function bukaNota(kunciUnik) {
   initNotaModalView();
+  updateMasterParenggeDatalist();
   if (!kunciUnik && kunciUnik !== 0) return;
   const targetKey = String(kunciUnik).trim().toLowerCase();
 
   activeKapal = allPelayaran.find(p => {
-    const pKunci = (p.kunci_unik || getNormalizedTripId(p.nama_kapal, p.tanggal)).trim().toLowerCase();
+    const pKunci = (p.kunci_unik || getNormalizedTripId(p.nama_kapal_ongkir || p.nama_kapal, p.tanggal)).trim().toLowerCase();
     return pKunci === targetKey;
   });
 
   if (!activeKapal) {
     activeKapal = allPelayaran.find(p => {
-      const generated = getNormalizedTripId(p.nama_kapal, p.tanggal).trim().toLowerCase();
+      const generated = getNormalizedTripId(p.nama_kapal_ongkir || p.nama_kapal, p.tanggal).trim().toLowerCase();
       return generated === targetKey;
     });
   }
 
   if (!activeKapal) return;
 
-  activeKapal.kunci_unik = getNormalizedTripId(activeKapal.nama_kapal, activeKapal.tanggal, activeKapal.kunci_unik);
+  activeKapal.kunci_unik = getNormalizedTripId(activeKapal.nama_kapal_ongkir || activeKapal.nama_kapal, activeKapal.tanggal, activeKapal.kunci_unik);
 
   const muatanKapal = allRincian.filter(r => isSameTripRecord(r, activeKapal));
 
@@ -84,8 +95,12 @@ function tutupNota() {
 }
 
 function tambahBarisManual() {
+  const defaultNama = (Array.isArray(MASTER_KAPAL_PARENGGE) && MASTER_KAPAL_PARENGGE.length > 0)
+    ? MASTER_KAPAL_PARENGGE[0]
+    : "Kapal Parengge Baru";
+
   notaItems.push({
-    nama: "Kapal Parengge Baru",
+    nama: defaultNama,
     gabus: 1,
     ongkir: 0
   });
@@ -188,15 +203,7 @@ function renderBlangkoNota() {
       notaItems.forEach(i => totalGabusFisik += Math.max(0, Math.floor(Number(i.gabus) || 0)));
     }
 
-    const parenggeOptionsHtml = (Array.isArray(MASTER_KAPAL_PARENGGE) ? MASTER_KAPAL_PARENGGE : []).map(p => 
-      `<option value="${escapeHtml(p)}">`
-    ).join("");
-
     printArea.innerHTML = `
-      <datalist id="listMasterParengge">
-        ${parenggeOptionsHtml}
-      </datalist>
-
       <div class="${sheetClass}">
         <!-- WATERMARK LOGO RESMI DI BELAKANG NOTA -->
         <div class="nota-watermark" aria-hidden="true">

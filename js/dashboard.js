@@ -67,8 +67,8 @@ function initDashboardView() {
               </svg>
             </div>
           </div>
-          <div class="kpi-value" id="kpiTotalParengge">0</div>
-          <div class="kpi-sub">Pemilik Muatan Unik →</div>
+          <div class="kpi-value" id="kpiTotalParengge">0 Kapal</div>
+          <div class="kpi-sub" id="kpiSubParengge">Master Terdaftar →</div>
         </div>
 
         <div class="kpi-card" onclick="switchTab('audit')" style="cursor: pointer;" title="Buka Audit & Selisih">
@@ -184,14 +184,19 @@ function renderDashboard() {
   const totalKapal = allPelayaran.length;
   const totalGabus = allPelayaran.reduce((sum, p) => sum + (Number(p.total_hitung) || 0), 0);
   
-  // Hitung Parengge Unik
-  let parenggeMap = {};
-  allRincian.forEach(r => {
-    let rawName = (r.nama_pemilik || "Tanpa Nama").trim();
-    let key = rawName.toLowerCase();
-    if (!parenggeMap[key]) parenggeMap[key] = true;
-  });
-  const totalParengge = Object.keys(parenggeMap).length;
+  // Hitung Parengge Terdaftar & Aktif
+  let activeParenggeMap = {};
+  if (Array.isArray(allRincian)) {
+    allRincian.forEach(r => {
+      let rawName = String(r.nama_kapal_parengge || r.nama_pemilik || "").trim();
+      if (rawName && rawName.toLowerCase() !== "tanpa nama") {
+        activeParenggeMap[rawName.toLowerCase()] = true;
+      }
+    });
+  }
+  const activeParenggeCount = Object.keys(activeParenggeMap).length;
+  const masterListCount = Array.isArray(MASTER_KAPAL_PARENGGE) ? MASTER_KAPAL_PARENGGE.length : 34;
+  const totalParengge = Math.max(masterListCount, activeParenggeCount);
 
   const selisihList = allPelayaran.filter(p => p.status_selisih !== "SESUAI");
 
@@ -203,7 +208,14 @@ function renderDashboard() {
   if (kpiGabus) kpiGabus.textContent = `${formatDots(totalGabus)} Gabus`;
 
   const kpiParengge = document.getElementById("kpiTotalParengge");
-  if (kpiParengge) kpiParengge.textContent = `${totalParengge} Parengge`;
+  if (kpiParengge) kpiParengge.textContent = `${totalParengge} Kapal`;
+
+  const kpiSubP = document.getElementById("kpiSubParengge");
+  if (kpiSubP) {
+    kpiSubP.textContent = activeParenggeCount > 0 
+      ? `${activeParenggeCount} Aktif Muat →` 
+      : `${masterListCount} Master Terdaftar →`;
+  }
 
   const kpiAudit = document.getElementById("kpiStatusAudit");
   const kpiSubAudit = document.getElementById("kpiSubAudit");

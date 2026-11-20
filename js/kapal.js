@@ -58,12 +58,18 @@ function filterData() {
 
   filteredPelayaran = allPelayaran.filter(p => {
     const nKapal = (p.nama_kapal_ongkir || p.nama_kapal || "").toLowerCase();
-    const matchSearch = !q || 
-      nKapal.includes(q) ||
+    const matchShip = nKapal.includes(q) ||
       (p.juragan || "").toLowerCase().includes(q) ||
       (p.lokasi_muat || "").toLowerCase().includes(q) ||
       (p.waktu_berangkat || "").toLowerCase().includes(q) ||
       (p.tanggal || "").toLowerCase().includes(q);
+
+    const matchParengge = !q ? false : allRincian.some(r => 
+      isSameTripRecord(r, p) && 
+      (r.nama_kapal_parengge || r.nama_pemilik || "").toLowerCase().includes(q)
+    );
+
+    const matchSearch = !q || matchShip || matchParengge;
 
     let matchPill = true;
     if (currentFilterPill === 'HARI_INI') {

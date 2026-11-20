@@ -49,6 +49,25 @@ function getSpreadsheet() {
   return SpreadsheetApp.openById(SPREADSHEET_ID);
 }
 
+function findSheet(ss, targetSheetId, nameKeywords) {
+  var sheets = ss.getSheets();
+  // 1. Prioritas: Cek berdasarkan sheetId jika cocok
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getSheetId() === targetSheetId) return sheets[i];
+  }
+  // 2. Cek berdasarkan nama (case-insensitive & fleksibel spasi/underscore)
+  for (var j = 0; j < sheets.length; j++) {
+    var sName = sheets[j].getName().toLowerCase().replace(/[\s_\-]+/g, "");
+    for (var k = 0; k < nameKeywords.length; k++) {
+      var pat = nameKeywords[k].toLowerCase().replace(/[\s_\-]+/g, "");
+      if (sName === pat || sName.indexOf(pat) !== -1) {
+        return sheets[j];
+      }
+    }
+  }
+  return null;
+}
+
 function jsonResponse(data) {
   return ContentService
     .createTextOutput(JSON.stringify(data))
@@ -91,12 +110,8 @@ function doGet(e) {
   try {
     var ss = getSpreadsheet();
     
-    // 1. Baca Tab Rekap_Ongkir
-    var sheetRekap = ss.getSheetByName("Rekap_Ongkir");
-    if (!sheetRekap) {
-      var sheets = ss.getSheets();
-      sheetRekap = sheets[0];
-    }
+    // 1. Baca Tab Rekap_Ongkir (sheetId: 0 atau nama yang cocok)
+    var sheetRekap = findSheet(ss, 0, ["Rekap_Ongkir", "RekapOngkir", "Rekap"]) || ss.getSheets()[0];
 
     var pelayaran = [];
     if (sheetRekap && sheetRekap.getLastRow() >= 2) {
@@ -143,16 +158,13 @@ function doGet(e) {
       }
     }
 
-    // 2. Baca Tab Rincian_Muatan
-    var sheetRincian = ss.getSheetByName("Rincian_Muatan");
-    if (!sheetRincian) {
-      var allSheets = ss.getSheets();
-      if (allSheets.length > 1) sheetRincian = allSheets[1];
-    }
+    // 2. Baca Tab Rincian_Muatan (sheetId: 1001 atau nama yang cocok)
+    var sheetRincian = findSheet(ss, 1001, ["Rincian_Muatan", "RincianMuatan", "Rincian"]) || (ss.getSheets().length > 1 ? ss.getSheets()[1] : null);
 
     var rincian = [];
     if (sheetRincian && sheetRincian.getLastRow() >= 2) {
-      var dataRincian = sheetRincian.getRange(2, 1, sheetRincian.getLastRow() - 1, 8).getValues();
+      var maxCols = Math.max(sheetRincian.getLastColumn(), 8);
+      var dataRincian = sheetRincian.getRange(2, 1, sheetRincian.getLastRow() - 1, maxCols).getValues();
       for (var j = 0; j < dataRincian.length; j++) {
         var rRow = dataRincian[j];
         var rKunci = String(rRow[1] || "").trim();
@@ -185,25 +197,37 @@ function doGet(e) {
       }
     }
 
-    // 3. Baca Tab Database_Kapal (Master Nama Kapal Standar)
+    // 3. Baca Tab Database_Kapal (sheetId: 2001 atau nama yang cocok)
     var masterOngkir = [];
     var masterParengge = [];
-    var sheetMaster = ss.getSheetByName("Database_Kapal");
+    var sheetMaster = findSheet(ss, 2001, ["Database_Kapal", "DatabaseKapal", "MasterKapal", "Database", "Kapal"]);
     if (sheetMaster && sheetMaster.getLastRow() >= 2) {
-      var lastR = sheetMaster.getLastRow();
-      // Kolom A-B: No, Nama Kapal Ongkir
-      var dataOngkir = sheetMaster.getRange(2, 2, Math.min(lastR - 1, 37), 1).getValues();
-      for (var o = 0; o < dataOngkir.length; o++) {
-        var nOngkir = String(dataOngkir[o][0] || "").trim();
-        if (nOngkir) masterOngkir.push(nOngkir);
+      var allMaster = sheetMaster.getDataRange().getValues();
+      var colOngkirIdx = 1;   // Default: B (indeks 1)
+      var colParenggeIdx = 4; // Default: E (indeks 4)
+
+      if (allMaster.length > 0) {
+        var hRow = allMaster[0];
+        for (var h = 0; h < hRow.length; h++) {
+          var hTxt = String(hRow[h] || "").toLowerCase();
+          if (hTxt.indexOf("ongkir") !== -1) colOngkirIdx = h;
+          if (hTxt.indexOf("parengge") !== -1) colParenggeIdx = h;
+        }
       }
 
-      // Kolom D-E: No, Nama Kapal Parengge
-      if (sheetMaster.getLastColumn() >= 5) {
-        var dataParengge = sheetMaster.getRange(2, 5, Math.min(lastR - 1, 35), 1).getValues();
-        for (var p = 0; p < dataParengge.length; p++) {
-          var nParengge = String(dataParengge[p][0] || "").trim();
-          if (nParengge) masterParengge.push(nParengge);
+      for (var rowIdx = 1; rowIdx < allMaster.length; rowIdx++) {
+        var rItem = allMaster[rowIdx];
+        if (rItem.length > colOngkirIdx) {
+          var nO = String(rItem[colOngkirIdx] || "").trim();
+          if (nO && isNaN(Number(nO)) && masterOngkir.indexOf(nO) === -1) {
+            masterOngkir.push(nO);
+          }
+        }
+        if (rItem.length > colParenggeIdx) {
+          var nP = String(rItem[colParenggeIdx] || "").trim();
+          if (nP && isNaN(Number(nP)) && masterParengge.indexOf(nP) === -1) {
+            masterParengge.push(nP);
+          }
         }
       }
     }
@@ -244,8 +268,8 @@ function doPost(e) {
     }
 
     var ss = getSpreadsheet();
-    var sheetRekap = ss.getSheetByName("Rekap_Ongkir") || ss.getSheets()[0];
-    var sheetRincian = ss.getSheetByName("Rincian_Muatan") || ss.getSheets()[1];
+    var sheetRekap = findSheet(ss, 0, ["Rekap_Ongkir", "RekapOngkir", "Rekap"]) || ss.getSheets()[0];
+    var sheetRincian = findSheet(ss, 1001, ["Rincian_Muatan", "RincianMuatan", "Rincian"]) || (ss.getSheets().length > 1 ? ss.getSheets()[1] : null);
 
     var nowStr = Utilities.formatDate(new Date(), TIMEZONE, "yyyy-MM-dd HH:mm:ss");
     var kunci = String(payload.kunci_unik || "").trim();

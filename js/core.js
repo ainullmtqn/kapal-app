@@ -278,6 +278,13 @@ function getNormalizedTripId(namaKapal, tanggal, fallbackKunci = "") {
 function isSameTripRecord(r, kapal) {
   if (!r || !kapal) return false;
 
+  // 1. Cek kecocokan Kunci Unik (Foreign Key Relasional)
+  const rKunci = String(r.kunci_unik || "").trim().toLowerCase();
+  const kKunci = String(kapal.kunci_unik || "").trim().toLowerCase();
+  if (rKunci && kKunci && rKunci === kKunci) {
+    return true;
+  }
+
   const rKapal = (r.nama_kapal_ongkir || r.nama_kapal || "").trim().toLowerCase();
   const kKapal = (kapal.nama_kapal_ongkir || kapal.nama_kapal || "").trim().toLowerCase();
 
@@ -399,6 +406,7 @@ async function tarikSemuaData() {
       if (Array.isArray(data.master_kapal_parengge) && data.master_kapal_parengge.length > 0) {
         MASTER_KAPAL_PARENGGE = data.master_kapal_parengge;
         try { localStorage.setItem("CACHE_MASTER_PARENGGE", JSON.stringify(MASTER_KAPAL_PARENGGE)); } catch (_) {}
+        if (typeof updateMasterParenggeDatalist === "function") updateMasterParenggeDatalist();
       }
       
       normalizeDatasetTripIds(allPelayaran, allRincian);
@@ -481,6 +489,7 @@ async function cekDataBaruSilent() {
       if (Array.isArray(data.master_kapal_parengge) && data.master_kapal_parengge.length > 0) {
         MASTER_KAPAL_PARENGGE = data.master_kapal_parengge;
         try { localStorage.setItem("CACHE_MASTER_PARENGGE", JSON.stringify(MASTER_KAPAL_PARENGGE)); } catch (_) {}
+        if (typeof updateMasterParenggeDatalist === "function") updateMasterParenggeDatalist();
       }
 
       normalizeDatasetTripIds(dataBaruPelayaran, dataBaruRincian);
