@@ -29,22 +29,6 @@ function initSettingView() {
           </button>
         </div>
 
-        <!-- Toolbar Tambah/Simpan Kapal Baru -->
-        <div class="master-toolbar-grid">
-          <div class="master-add-row">
-            <input type="text" id="inputTambahMasterKapal" class="master-input" placeholder="Tambah nama kapal baru..." onkeydown="if(event.key==='Enter') tambahDanSimpanMasterKapal();">
-            <button type="button" class="btn-master-add" id="btnSimpanMasterSheets" onclick="tambahDanSimpanMasterKapal()" title="Simpan ke database master kapal">
-              <span>💾 Simpan</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Peringatan Perubahan Belum Disimpan -->
-        <div class="master-unsaved-alert" id="masterUnsavedAlert" style="display: none;">
-          <span>⚠️</span>
-          <span>Terdapat perubahan yang belum tersimpan ke Google Sheets. Klik <strong>"Simpan"</strong> di atas agar data online sinkron!</span>
-        </div>
-
         <!-- Container Daftar Nama Kapal dengan Fitur Tutup / Buka -->
         <details class="master-kapal-details-toggle" id="detailsMasterKapalList" style="border: 1px solid var(--border); border-radius: 10px; background: #ffffff; overflow: hidden; margin-top: 0.75rem;">
           <summary style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; background: #f8fafc; font-size: 0.84rem; font-weight: 800; color: var(--text-primary); user-select: none; outline: none; list-style: none;">
@@ -57,11 +41,26 @@ function initSettingView() {
               <span style="font-size: 0.85rem;">📋</span>
             </div>
           </summary>
-          <div style="padding: 0.75rem; border-top: 1px solid var(--border); background: #ffffff;">
-            <!-- Kolom Cari Nama Kapal Muncul Saat Daftar Nama Kapal Dibuka -->
+          <div style="padding: 0.85rem; border-top: 1px solid var(--border); background: #ffffff;">
+            <!-- Toolbar Tambah/Simpan Kapal Baru -->
+            <div class="master-add-row" style="margin-bottom: 0.65rem;">
+              <input type="text" id="inputTambahMasterKapal" class="master-input" placeholder="Tambah nama kapal baru..." onkeydown="if(event.key==='Enter') tambahDanSimpanMasterKapal();">
+              <button type="button" class="btn-master-add" id="btnSimpanMasterSheets" onclick="tambahDanSimpanMasterKapal()" title="Simpan ke database master kapal">
+                <span>💾 Simpan</span>
+              </button>
+            </div>
+
+            <!-- Kolom Cari Nama Kapal -->
             <div class="master-search-row" style="margin-bottom: 0.65rem;">
               <input type="text" id="searchMasterInput" class="master-input" placeholder="🔍 Cari nama kapal..." oninput="filterMasterKapal(this.value)">
             </div>
+
+            <!-- Peringatan Perubahan Belum Disimpan -->
+            <div class="master-unsaved-alert" id="masterUnsavedAlert" style="display: none; margin-bottom: 0.65rem;">
+              <span>⚠️</span>
+              <span>Terdapat perubahan yang belum tersimpan ke Google Sheets. Klik <strong>"Simpan"</strong> di atas agar data online sinkron!</span>
+            </div>
+
             <div class="master-list-container" id="masterKapalItemsList" style="border: none; border-radius: 0; padding: 0;">
               <!-- Diisi via renderMasterKapalList() -->
             </div>
