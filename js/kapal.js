@@ -18,7 +18,7 @@ function initKapalView() {
 
       <div class="search-card">
         <div class="search-input-wrap">
-          <input type="text" id="searchInput" class="search-input" placeholder="🔍 Cari nama kapal, juragan, parengge..." oninput="filterData()">
+          <input type="text" id="searchInput" class="search-input" placeholder="🔍 Cari nama kapal ongkir, juragan..." oninput="filterData()">
           <button class="btn-action btn-refresh-search" onclick="tarikSemuaData()" title="Segarkan Data">
             <svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
