@@ -180,6 +180,13 @@ function initNavbar() {
 function switchTab(tabName, el) {
   currentTab = tabName;
 
+  // Mode Warta Publik Bersih: Sembunyikan Main Bar Top Navbar & Bottom Nav
+  if (tabName === 'warta') {
+    document.body.classList.add('warta-public-mode');
+  } else {
+    document.body.classList.remove('warta-public-mode');
+  }
+
   // 1. Update Desktop Navbar link active state
   document.querySelectorAll('.navbar-nav .nav-link').forEach(link => link.classList.remove('active'));
   const desktopNavMap = {
@@ -308,8 +315,39 @@ document.addEventListener("DOMContentLoaded", () => {
     console.warn("Gagal membaca cache lokal:", err);
   }
 
-  // Buka Warta Hari Ini secara default
-  switchTab('warta');
+  // Buka Warta Hari Ini secara default atau cek Hash URL (#admin, #dashboard)
+  const initialHash = (window.location.hash || "").replace("#", "").toLowerCase();
+  if (initialHash === "admin" || initialHash === "dashboard") {
+    switchTab('dashboard');
+  } else if (["kapal", "muatan", "audit", "setting"].includes(initialHash)) {
+    switchTab(initialHash);
+  } else {
+    switchTab('warta');
+  }
+
+  // Listener Perubahan Hash URL
+  window.addEventListener("hashchange", () => {
+    const hash = (window.location.hash || "").replace("#", "").toLowerCase();
+    if (hash === "admin" || hash === "dashboard") {
+      switchTab('dashboard');
+    } else if (hash === "warta") {
+      switchTab('warta');
+    } else if (["kapal", "muatan", "audit", "setting"].includes(hash)) {
+      switchTab(hash);
+    }
+  });
+
+  // Shortcut Keyboard Pengelola: Alt+A atau Ctrl+Shift+A untuk toggle admin/warta
+  document.addEventListener("keydown", (e) => {
+    if ((e.altKey && (e.key === 'a' || e.key === 'A')) || (e.ctrlKey && e.shiftKey && (e.key === 'a' || e.key === 'A'))) {
+      e.preventDefault();
+      if (currentTab === 'warta') {
+        switchTab('dashboard');
+      } else {
+        switchTab('warta');
+      }
+    }
+  });
 
   // 2. Setup Dismiss Modal (Backdrop Click & ESC Key)
   const modal = document.getElementById("notaModal");

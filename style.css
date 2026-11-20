@@ -2631,70 +2631,21 @@ table.items-table tfoot tr {
 /* ============================================================== */
 /* WARTA ONGKIR & LIVE BROADCAST HARIAN (PUBLIC INDEX PAGE)       */
 /* ============================================================== */
+/* MODE WARTA PUBLIK BERSIH: Sembunyikan Main Bar & Tombol Admin  */
+body.warta-public-mode .app-navbar,
+body.warta-public-mode .bottom-nav,
+body.warta-public-mode .warta-admin-banner {
+  display: none !important;
+}
+
+body.warta-public-mode .main-wrapper {
+  padding-top: 1.5rem !important;
+  padding-bottom: 2.5rem !important;
+  max-width: 1320px;
+}
+
 .warta-admin-banner {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  color: #ffffff;
-  border-radius: 12px;
-  padding: 0.9rem 1.25rem;
-  margin-bottom: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
-  flex-wrap: wrap;
-}
-
-.warta-admin-left {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-}
-
-.warta-admin-icon-wrap {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: rgba(56, 136, 204, 0.2);
-  color: #38bdf8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.warta-admin-title {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: #f8fafc;
-}
-
-.warta-admin-sub {
-  font-size: 0.76rem;
-  color: #94a3b8;
-  margin-top: 1px;
-}
-
-.btn-enter-admin {
-  background: linear-gradient(135deg, var(--ocean) 0%, var(--primary) 100%);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0.55rem 1.15rem;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.btn-enter-admin:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
-  background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
+  display: none !important;
 }
 
 .warta-hero-card {
@@ -2823,12 +2774,65 @@ table.items-table tfoot tr {
   color: #fff;
 }
 
+.btn-warta-refresh {
+  background: #f1f5f9;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.85rem;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.btn-warta-refresh:hover {
+  background: #e2e8f0;
+  color: var(--text-primary);
+}
+
 .btn-copy-all-warta {
   background: linear-gradient(135deg, #15803d 0%, #166534 100%);
   color: #fff;
   font-size: 0.78rem;
   padding: 0.5rem 1rem;
   border-radius: 7px;
+}
+
+.warta-public-footer {
+  margin-top: 3.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.warta-admin-discreet-link {
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.warta-admin-discreet-link:hover {
+  color: var(--primary);
+  background: rgba(30, 64, 175, 0.08);
+  opacity: 1;
 }
 
 .warta-fallback-alert {
@@ -3015,6 +3019,19 @@ table.items-table tfoot tr {
 }
 
 @media (max-width: 640px) {
+  body.warta-public-mode .main-wrapper {
+    padding-top: 0.85rem !important;
+    padding-bottom: 2rem !important;
+    padding-left: 0.85rem !important;
+    padding-right: 0.85rem !important;
+  }
+  .warta-public-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+    text-align: center;
+    margin-top: 2.25rem;
+  }
   .warta-grid {
     grid-template-columns: 1fr;
   }

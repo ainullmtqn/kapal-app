@@ -10,32 +10,10 @@ function initWartaView() {
   if (!container || container.innerHTML.trim() !== "") return;
 
   container.innerHTML = `
-      <!-- BANNER AKSES CEPAT PANEL ADMIN -->
-      <div class="warta-admin-banner">
-        <div class="warta-admin-left">
-          <div class="warta-admin-icon-wrap">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-          </div>
-          <div>
-            <div class="warta-admin-title">Panel Pengelolaan Manifes (Admin)</div>
-            <div class="warta-admin-sub">Input pelayaran baru, cetak nota kontan A6, audit selisih, dan sinkronisasi database.</div>
-          </div>
-        </div>
-        <button type="button" class="btn-action btn-enter-admin" onclick="switchTab('dashboard')" title="Buka Panel Manajemen Admin">
-          <span>Masuk ke Halaman Admin</span>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
-      </div>
-
       <!-- HERO BANNER INFORMASI ONGKIR HARI INI -->
       <div class="warta-hero-card">
         <div class="warta-hero-top">
-          <div class="warta-hero-logo-box">
+          <div class="warta-hero-logo-box" ondblclick="switchTab('dashboard')" title="PARENGGEKITA">
             <img src="logo.png" alt="Logo PARENGGEKITA" class="warta-hero-logo">
           </div>
           <div>
@@ -63,6 +41,9 @@ function initWartaView() {
           </div>
 
           <div class="warta-date-actions">
+            <button type="button" class="btn-warta-refresh" onclick="tarikSemuaData()" title="Segarkan Data Terkini">
+              🔄 Segarkan
+            </button>
             <button type="button" class="btn-action btn-copy-all-warta" onclick="salinSemuaWarta()" id="btnCopyAllWarta">
               📋 Salin Semua Warta (WhatsApp)
             </button>
@@ -79,6 +60,22 @@ function initWartaView() {
           Sedang menyiapkan warta informasi ongkir...
         </div>
       </div>
+
+      <!-- FOOTER DISKRET PUBLIK DENGAN AKSES PENGELOLA SAMAR -->
+      <footer class="warta-public-footer no-print">
+        <div class="warta-footer-left">
+          <span>PARENGGEKITA &bull; Sistem Manifes & Nota Logistik Kapal</span>
+        </div>
+        <div class="warta-footer-right">
+          <a href="#admin" class="warta-admin-discreet-link" onclick="switchTab('dashboard'); return false;" title="Portal Khusus Pengelola">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 3px;">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>Pengelola</span>
+          </a>
+        </div>
+      </footer>
   `;
 }
 
@@ -244,11 +241,8 @@ function renderWartaHariIni(targetDate = "") {
           <button class="btn-action" onclick="setWartaHariIni()" style="font-size: 0.8rem;">
             📅 Cek Hari Ini
           </button>
-          <button class="btn-action" onclick="bukaModalTambahPelayaran('${escapeHtml(targetDate)}')" style="background: var(--ocean); font-size: 0.8rem;">
-            ➕ Input Pelayaran Baru
-          </button>
-          <button class="btn-action" onclick="switchTab('dashboard')" style="background: #475569; font-size: 0.8rem;">
-            ⚙️ Masuk ke Halaman Admin
+          <button class="btn-warta-refresh" onclick="tarikSemuaData()" style="font-size: 0.8rem;">
+            🔄 Segarkan Data
           </button>
         </div>
       </div>
