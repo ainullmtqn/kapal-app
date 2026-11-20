@@ -9,16 +9,6 @@ function initSettingView() {
 
   container.innerHTML = `
       <div class="setting-box">
-        <div class="setting-brand-banner">
-          <div class="setting-banner-logo-wrap">
-            <img src="logo.png" alt="Logo PARENGGEKITA" class="setting-banner-logo">
-          </div>
-          <div>
-            <div class="setting-banner-title">PARENGGE<span class="brand-title-accent">KITA</span><span class="brand-title-dot">.</span></div>
-            <div class="setting-banner-sub">Sistem Digital Manifes & Nota Logistik Kapal</div>
-          </div>
-        </div>
-
         <!-- ============================================== -->
         <!-- 1. HALAMAN MENU UTAMA PENGATURAN (HUB)        -->
         <!-- ============================================== -->
@@ -31,17 +21,17 @@ function initSettingView() {
           </div>
 
           <div class="setting-menu-grid">
-            <!-- Menu 1: Master Data Kapal & Cadangan -->
+            <!-- Menu 1: Master Data Nama Kapal -->
             <div class="setting-menu-card" onclick="bukaSettingHalaman('master')">
               <div class="setting-menu-card-left">
                 <div class="setting-menu-icon">📋</div>
                 <div class="setting-menu-card-body">
-                  <div class="setting-menu-card-title">Master Data Kapal & Cadangan</div>
+                  <div class="setting-menu-card-title">Master Data Nama Kapal</div>
                   <div class="setting-menu-card-desc">
-                    Kelola daftar nama Kapal Ongkir & Kapal Parengge untuk rekomendasi pencarian (auto-complete), serta unduh atau pulihkan file cadangan (JSON).
+                    Kelola daftar nama Kapal Ongkir & Kapal Parengge untuk rekomendasi pencarian (auto-complete) serta sinkronkan ke Google Spreadsheet.
                   </div>
                   <div class="setting-menu-card-badge">
-                    <span id="badgeMenuMasterInfo">Kelola Database Kapal & Cadangan</span>
+                    <span id="badgeMenuMasterInfo">Kelola Database Kapal</span>
                   </div>
                 </div>
               </div>
@@ -78,7 +68,7 @@ function initSettingView() {
         </div>
 
         <!-- ============================================== -->
-        <!-- 2. HALAMAN BARU: MASTER DATA KAPAL & CADANGAN -->
+        <!-- 2. HALAMAN BARU: MASTER DATA KAPAL             -->
         <!-- ============================================== -->
         <div id="settingPageMaster" class="setting-subpage" style="display: none;">
           <button type="button" class="btn-setting-back" onclick="bukaSettingHalaman('menu')">
@@ -150,38 +140,6 @@ function initSettingView() {
           <!-- Container Daftar Nama Kapal -->
           <div class="master-list-container" id="masterKapalItemsList">
             <!-- Diisi via renderMasterKapalList() -->
-          </div>
-
-          <!-- Pusat Cadangan & Pemulihan Data (Data Protection & Recovery) -->
-          <div class="security-card-section" style="margin-top: 1.5rem;">
-            <div class="security-card-title-wrap" style="margin-bottom: 0.5rem;">
-              <span class="security-icon">🛡️</span>
-              <div>
-                <h3 class="setting-title" style="margin-bottom: 2px;">Cadangan & Pemulihan Mandiri (JSON)</h3>
-                <div class="setting-desc" style="margin-bottom: 0;">Amankan data offline ke file lokal atau pulihkan data kapan saja tanpa internet.</div>
-              </div>
-            </div>
-
-            <div class="backup-btn-grid">
-              <button type="button" class="btn-action btn-backup-export" onclick="eksporCadanganData()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                <span>Ekspor Cadangan (JSON)</span>
-              </button>
-
-              <button type="button" class="btn-action btn-backup-import" onclick="triggerImporCadangan()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-                <span>Pulihkan dari Cadangan</span>
-              </button>
-              <input type="file" id="backupFileInput" accept=".json" style="display: none;" onchange="handleFileImporCadangan(event)">
-            </div>
           </div>
         </div>
 
