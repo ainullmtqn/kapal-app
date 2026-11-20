@@ -23,7 +23,7 @@ function initWartaView() {
           </div>
         </div>
 
-        <!-- NAVIGASI TANGGAL WARTA -->
+        <!-- NAVIGASI TANGGAL WARTA (HANYA SEBELUMNYA, TANGGAL, DAN BERIKUTNYA) -->
         <div class="warta-date-control-bar">
           <div class="warta-date-nav-buttons">
             <button type="button" class="btn-warta-nav" onclick="geserTanggalWarta(-1)" title="Hari Sebelumnya">
@@ -35,15 +35,9 @@ function initWartaView() {
             <button type="button" class="btn-warta-nav" onclick="geserTanggalWarta(1)" title="Hari Berikutnya">
               Berikutnya ▶
             </button>
-            <button type="button" class="btn-warta-today" onclick="setWartaHariIni()">
-              📅 Hari Ini
-            </button>
           </div>
 
           <div class="warta-date-actions">
-            <button type="button" class="btn-warta-refresh" onclick="tarikSemuaData()" title="Segarkan Data Terkini">
-              🔄 Segarkan
-            </button>
             <button type="button" class="btn-action btn-copy-all-warta" onclick="salinSemuaWarta()" id="btnCopyAllWarta">
               📋 Salin Semua Warta (WhatsApp)
             </button>
@@ -240,9 +234,6 @@ function renderWartaHariIni(targetDate = "") {
         <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
           <button class="btn-action" onclick="setWartaHariIni()" style="font-size: 0.8rem;">
             📅 Cek Hari Ini
-          </button>
-          <button class="btn-warta-refresh" onclick="tarikSemuaData()" style="font-size: 0.8rem;">
-            🔄 Segarkan Data
           </button>
         </div>
       </div>
