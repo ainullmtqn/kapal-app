@@ -29,11 +29,8 @@ function initSettingView() {
           </button>
         </div>
 
-        <!-- Toolbar Pencarian & Tambah/Simpan Kapal Baru -->
+        <!-- Toolbar Tambah/Simpan Kapal Baru -->
         <div class="master-toolbar-grid">
-          <div class="master-search-row">
-            <input type="text" id="searchMasterInput" class="master-input" placeholder="🔍 Cari nama kapal di daftar master..." oninput="filterMasterKapal(this.value)">
-          </div>
           <div class="master-add-row">
             <input type="text" id="inputTambahMasterKapal" class="master-input" placeholder="Tambah nama kapal baru..." onkeydown="if(event.key==='Enter') tambahDanSimpanMasterKapal();">
             <button type="button" class="btn-master-add" id="btnSimpanMasterSheets" onclick="tambahDanSimpanMasterKapal()" title="Simpan ke database master kapal">
@@ -60,8 +57,14 @@ function initSettingView() {
               <span style="font-size: 0.85rem;">📋</span>
             </div>
           </summary>
-          <div class="master-list-container" id="masterKapalItemsList" style="border: none; border-top: 1px solid var(--border); border-radius: 0;">
-            <!-- Diisi via renderMasterKapalList() -->
+          <div style="padding: 0.75rem; border-top: 1px solid var(--border); background: #ffffff;">
+            <!-- Kolom Cari Nama Kapal Muncul Saat Daftar Nama Kapal Dibuka -->
+            <div class="master-search-row" style="margin-bottom: 0.65rem;">
+              <input type="text" id="searchMasterInput" class="master-input" placeholder="🔍 Cari nama kapal..." oninput="filterMasterKapal(this.value)">
+            </div>
+            <div class="master-list-container" id="masterKapalItemsList" style="border: none; border-radius: 0; padding: 0;">
+              <!-- Diisi via renderMasterKapalList() -->
+            </div>
           </div>
         </details>
 
@@ -234,6 +237,11 @@ function switchMasterTab(type) {
     inputAdd.placeholder = 'Tambah nama kapal baru...';
     inputAdd.value = '';
   }
+  const searchInput = document.getElementById('searchMasterInput');
+  if (searchInput) {
+    searchInput.value = '';
+  }
+  masterSearchQuery = '';
   renderMasterKapalList();
 }
 

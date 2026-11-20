@@ -16,7 +16,7 @@ function initMuatanView() {
           </div>
         </div>
         <div class="search-input-wrap">
-          <input type="text" id="searchMuatanInput" class="search-input" placeholder="🔍 Cari nama kapal parengge / kapal penerima..." oninput="filterParenggeTab(this.value)">
+          <input type="text" id="searchMuatanInput" class="search-input" placeholder="🔍 Cari nama kapal parengge..." oninput="filterParenggeTab(this.value)">
           <button class="btn-action btn-refresh-search" onclick="tarikSemuaData()" title="Segarkan Data">
             <svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
@@ -73,17 +73,11 @@ function renderSemuaMuatan(searchQuery = "") {
   // Hanya kapal dengan riwayat pengiriman aktual
   let fullList = Object.values(aggregatedMap).filter(item => item.riwayat_pengiriman.length > 0);
 
-  // 2. Filter berdasarkan Input Pencarian
+  // 2. Filter berdasarkan Input Pencarian (Hanya cari nama kapal parengge)
   let displayList = fullList;
   if (searchQuery) {
     const qLower = searchQuery.toLowerCase().trim();
-    displayList = displayList.filter(item => {
-      const matchNama = item.nama_asli.toLowerCase().includes(qLower);
-      const matchKapal = item.riwayat_pengiriman.some(rip => 
-        rip.kapal.toLowerCase().includes(qLower) || String(rip.tanggal).includes(qLower)
-      );
-      return matchNama || matchKapal;
-    });
+    displayList = displayList.filter(item => item.nama_asli.toLowerCase().includes(qLower));
   }
 
   // 3. Urutkan: Total muatan gabus terbanyak di atas, kemudian urut abjad
