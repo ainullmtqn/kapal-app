@@ -35,7 +35,7 @@ function initSettingView() {
             <input type="text" id="searchMasterInput" class="master-input" placeholder="🔍 Cari nama kapal di daftar master..." oninput="filterMasterKapal(this.value)">
           </div>
           <div class="master-add-row">
-            <input type="text" id="inputTambahMasterKapal" class="master-input" placeholder="Nama Kapal Ongkir baru (cth: KMN SAMUDRA JAYA)..." onkeydown="if(event.key==='Enter') tambahDanSimpanMasterKapal();">
+            <input type="text" id="inputTambahMasterKapal" class="master-input" placeholder="Tambah nama kapal baru..." onkeydown="if(event.key==='Enter') tambahDanSimpanMasterKapal();">
             <button type="button" class="btn-master-add" id="btnSimpanMasterSheets" onclick="tambahDanSimpanMasterKapal()" title="Simpan ke database master kapal">
               <span>💾 Simpan</span>
             </button>
@@ -53,7 +53,7 @@ function initSettingView() {
           <summary style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; background: #f8fafc; font-size: 0.84rem; font-weight: 800; color: var(--text-primary); user-select: none; outline: none; list-style: none;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 1.15rem;">📑</span>
-              <span id="titleSummaryMasterList">Daftar Nama Kapal Ongkir</span>
+              <span id="titleSummaryMasterList">Daftar Nama Kapal</span>
             </div>
             <div style="display: flex; align-items: center; gap: 6px; font-size: 0.73rem; color: var(--text-muted); font-weight: 600;">
               <span>Klik Buka / Tutup</span>
@@ -142,7 +142,7 @@ function renderAdminPasswordSection(isOpen = false) {
       <summary style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; background: #f8fafc; font-size: 0.84rem; font-weight: 800; color: var(--text-primary); user-select: none; outline: none; list-style: none;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 1.15rem;">🔐</span>
-          <span>Pengaturan Kata Sandi Admin</span>
+          <span>Pengaturan Kata Sandi</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px; font-size: 0.73rem; color: var(--text-muted); font-weight: 600;">
           <span>Klik Buka / Tutup</span>
@@ -158,18 +158,18 @@ function renderAdminPasswordSection(isOpen = false) {
         <!-- Card: Ganti Sandi Admin Biasa -->
         <div style="background: var(--card-bg, #ffffff); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; max-width: 440px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); margin-bottom: 1rem;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary);">🛡️ Sandi Admin</span>
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary);">🛡️ Kata Sandi Baru</span>
             <span style="font-size: 0.68rem; color: var(--text-muted); background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">Saat ini: <strong>${escapeHtml(currentAdminPass)}</strong></span>
           </div>
           <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.65rem; line-height: 1.35;">
             Kata sandi login operasional untuk petugas pelabuhan & admin.
           </p>
           <div style="position: relative; margin-bottom: 0.65rem;">
-            <input type="password" id="inputNewAdminPassword" class="search-input" placeholder="Ketik kata sandi Admin baru..." style="width: 100%; font-size: 0.82rem; padding-right: 36px;">
+            <input type="password" id="inputNewAdminPassword" class="search-input" placeholder="Ketik kata sandi baru..." style="width: 100%; font-size: 0.82rem; padding-right: 36px;">
             <button type="button" onclick="togglePasswordVisibility('inputNewAdminPassword', this)" title="Tampilkan sandi" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 0.9rem;">👁️</button>
           </div>
           <button type="button" class="btn-action" onclick="simpanSandiRole('admin')" style="background: var(--ocean); font-size: 0.76rem; padding: 0.45rem 0.9rem; width: 100%; justify-content: center; font-weight: 700;">
-            💾 Simpan Sandi Admin
+            💾 Simpan Kata Sandi
           </button>
         </div>
 
@@ -231,9 +231,7 @@ function switchMasterTab(type) {
   }
   const inputAdd = document.getElementById('inputTambahMasterKapal');
   if (inputAdd) {
-    inputAdd.placeholder = type === 'ongkir' 
-      ? 'Nama Kapal Ongkir baru (cth: KMN SAMUDRA JAYA)...' 
-      : 'Nama Kapal Parengge baru (cth: BINTANG TIMUR)...';
+    inputAdd.placeholder = 'Tambah nama kapal baru...';
     inputAdd.value = '';
   }
   renderMasterKapalList();
@@ -267,7 +265,7 @@ function saveActiveMasterArray(newArr) {
 function updateMasterBadges() {
   const titleSummary = document.getElementById('titleSummaryMasterList');
   if (titleSummary) {
-    titleSummary.textContent = currentMasterTab === 'ongkir' ? 'Daftar Nama Kapal Ongkir' : 'Daftar Nama Kapal Parengge';
+    titleSummary.textContent = 'Daftar Nama Kapal';
   }
 
   const unsavedAlert = document.getElementById('masterUnsavedAlert');
