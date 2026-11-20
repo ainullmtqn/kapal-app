@@ -222,8 +222,8 @@ function switchTab(tabName, el) {
     if (typeof renderSemuaMuatan === "function") renderSemuaMuatan();
   } else if (tabName === 'setting') {
     if (tabSetting) tabSetting.style.display = "block";
-    if (typeof bukaSettingHalaman === "function") {
-      bukaSettingHalaman(typeof currentSettingView !== "undefined" ? currentSettingView : 'menu');
+    if (typeof renderMasterKapalList === "function") {
+      renderMasterKapalList();
     }
   }
 
@@ -249,17 +249,6 @@ document.addEventListener("DOMContentLoaded", () => {
     dateEl.textContent = formatTanggalIndo();
   }
 
-  // Inisialisasi Proteksi Webhook
-  const activeWebhook = (typeof getActiveWebhookUrl === "function") 
-    ? getActiveWebhookUrl() 
-    : (localStorage.getItem("GAS_WEBHOOK_URL") || "");
-  const inpWebhook = document.getElementById("webhookInput");
-  if (inpWebhook) {
-    inpWebhook.value = activeWebhook;
-    inpWebhook.type = "password";
-    inpWebhook.readOnly = true;
-    inpWebhook.classList.add("input-locked");
-  }
 
   // 1. Muat Cache Offline terlebih dahulu (Instant 0ms display)
   try {
@@ -346,8 +335,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 4. Tarik data terbaru dari Google Apps Script secara otomatis
-  const activeUrl = (typeof getActiveWebhookUrl === "function") 
-    ? getActiveWebhookUrl() 
+  const activeUrl = (typeof getActiveWebhookUrl === "function")
+    ? getActiveWebhookUrl()
     : (localStorage.getItem("GAS_WEBHOOK_URL") || "");
   if (activeUrl) {
     if (typeof tarikSemuaData === "function") tarikSemuaData();
