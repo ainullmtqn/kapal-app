@@ -51,9 +51,10 @@ function getDefaultWebhookUrl() {
 }
 
 function getActiveWebhookUrl() {
-  const custom = localStorage.getItem("GAS_WEBHOOK_URL");
-  if (custom && custom.trim().startsWith("https://")) {
-    return custom.trim();
+  // Selalu gunakan endpoint resmi yang terenkripsi di dalam kode sistem.
+  // Bersihkan sisa custom link lama dari localStorage perangkat jika ada.
+  if (localStorage.getItem("GAS_WEBHOOK_URL")) {
+    try { localStorage.removeItem("GAS_WEBHOOK_URL"); } catch (_) {}
   }
   return getDefaultWebhookUrl();
 }
@@ -472,7 +473,7 @@ async function tarikSemuaData() {
   }
   lastSyncTimestamp = now;
 
-  const baseUrl = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : localStorage.getItem("GAS_WEBHOOK_URL");
+  const baseUrl = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : getDefaultWebhookUrl();
   if (!baseUrl) {
     showSecurityToast("⚠️ Webhook Apps Script belum diatur!");
     return;
@@ -562,7 +563,7 @@ async function cekDataBaruSilent() {
   const modal = document.getElementById("notaModal");
   if (modal && modal.classList.contains("active")) return;
 
-  const baseUrl = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : localStorage.getItem("GAS_WEBHOOK_URL");
+  const baseUrl = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : getDefaultWebhookUrl();
   if (!baseUrl) return;
 
   const sep = baseUrl.includes("?") ? "&" : "?";

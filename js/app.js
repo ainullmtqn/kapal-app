@@ -260,6 +260,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+  // 0. Migrasi Otomatis: Hapus sisa link Webhook lama yang pernah tersimpan di perangkat ini
+  try {
+    if (localStorage.getItem("GAS_WEBHOOK_URL")) {
+      localStorage.removeItem("GAS_WEBHOOK_URL");
+      // Bersihkan juga cache lama yang berasal dari spreadsheet sebelumnya agar segera tersinkron
+      localStorage.removeItem("CACHE_PELAYARAN");
+      localStorage.removeItem("CACHE_RINCIAN");
+      localStorage.removeItem("CACHE_MASTER_ONGKIR");
+      localStorage.removeItem("CACHE_MASTER_PARENGGE");
+    }
+  } catch (_) {}
+
   // 1. Muat Cache Offline terlebih dahulu (Instant 0ms display)
   try {
     const cachedPel = localStorage.getItem("CACHE_PELAYARAN");
@@ -349,9 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 4. Tarik data terbaru dari Google Apps Script secara otomatis
-  const activeUrl = (typeof getActiveWebhookUrl === "function")
-    ? getActiveWebhookUrl()
-    : (localStorage.getItem("GAS_WEBHOOK_URL") || "");
+  const activeUrl = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : "";
   if (activeUrl) {
     if (typeof tarikSemuaData === "function") tarikSemuaData();
   } else if (allPelayaran.length === 0) {

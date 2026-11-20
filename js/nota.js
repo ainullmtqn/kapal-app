@@ -422,7 +422,7 @@ function triggerAutoSave() {
 }
 
 async function eksekusiSimpanOtomatis() {
-  const url = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : localStorage.getItem("GAS_WEBHOOK_URL");
+  const url = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : (typeof getDefaultWebhookUrl === "function" ? getDefaultWebhookUrl() : "");
   if (!url || !activeKapal) return;
 
   if (!notaItems || notaItems.length === 0) {

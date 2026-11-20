@@ -105,6 +105,7 @@ function bersihkanCache() {
     localStorage.removeItem("CACHE_RINCIAN");
     localStorage.removeItem("CACHE_MASTER_ONGKIR");
     localStorage.removeItem("CACHE_MASTER_PARENGGE");
+    localStorage.removeItem("GAS_WEBHOOK_URL");
     showSecurityToast("✓ Cache lokal berhasil dibersihkan.");
     setTimeout(() => location.reload(), 500);
   }
@@ -341,7 +342,7 @@ function hapusMasterKapal(index) {
 }
 
 async function simpanMasterKeSheets() {
-  const url = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : localStorage.getItem('GAS_WEBHOOK_URL');
+  const url = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : (typeof getDefaultWebhookUrl === 'function' ? getDefaultWebhookUrl() : '');
   if (!url) {
     alert('URL Webhook Google Apps Script belum diatur! Masukkan URL webhook di bagian atas terlebih dahulu.');
     return;
@@ -400,7 +401,7 @@ async function simpanMasterKeSheets() {
 }
 
 async function sinkronkanMasterDariSheets() {
-  const url = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : localStorage.getItem('GAS_WEBHOOK_URL');
+  const url = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : (typeof getDefaultWebhookUrl === 'function' ? getDefaultWebhookUrl() : '');
   if (!url) {
     alert('URL Webhook Google Apps Script belum diatur! Masukkan URL webhook di bagian atas terlebih dahulu.');
     return;
