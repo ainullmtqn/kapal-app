@@ -349,6 +349,10 @@ function switchTab(tabName, el) {
 
   // Mode Warta Publik Bersih: Sembunyikan Main Bar Top Navbar & Bottom Nav
   if (tabName === 'warta') {
+    // Kunci portal pengelola secara otomatis saat kembali ke halaman warta publik
+    sessionStorage.removeItem("IS_ADMIN_AUTH");
+    sessionStorage.removeItem("ADMIN_ROLE");
+    updateAdminLockIndicator();
     document.body.classList.add('warta-public-mode');
   } else {
     document.body.classList.remove('warta-public-mode');

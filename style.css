@@ -3382,12 +3382,19 @@ body.warta-public-mode .main-wrapper {
 }
 
 .master-list-container {
-  max-height: 380px;
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
   border: 1px solid var(--border);
   border-radius: 9px;
   background: #ffffff;
   padding: 4px;
+}
+
+.superadmin-details-toggle summary::-webkit-details-marker {
+  display: none;
+}
+.superadmin-details-toggle summary {
+  list-style: none;
 }
 
 .master-item-row {
