@@ -23,11 +23,9 @@ function initSettingView() {
         <div class="master-tab-switch-bar">
           <button type="button" class="btn-master-tab active" id="btnTabMasterOngkir" onclick="switchMasterTab('ongkir')">
             <span>🚢 Kapal Ongkir</span>
-            <span class="master-tab-badge" id="badgeCountOngkir">0</span>
           </button>
           <button type="button" class="btn-master-tab" id="btnTabMasterParengge" onclick="switchMasterTab('parengge')">
             <span>🐟 Kapal Parengge</span>
-            <span class="master-tab-badge" id="badgeCountParengge">0</span>
           </button>
         </div>
 
@@ -56,7 +54,6 @@ function initSettingView() {
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 1.15rem;">📑</span>
               <span id="titleSummaryMasterList">Daftar Nama Kapal Ongkir</span>
-              <span class="master-tab-badge" id="badgeCountMasterList" style="font-size: 0.7rem; padding: 2px 7px;">0</span>
             </div>
             <div style="display: flex; align-items: center; gap: 6px; font-size: 0.73rem; color: var(--text-muted); font-weight: 600;">
               <span>Klik Buka / Tutup</span>
@@ -268,20 +265,9 @@ function saveActiveMasterArray(newArr) {
 }
 
 function updateMasterBadges() {
-  const countOngkir = Array.isArray(MASTER_KAPAL_ONGKIR) ? MASTER_KAPAL_ONGKIR.length : 0;
-  const countParengge = Array.isArray(MASTER_KAPAL_PARENGGE) ? MASTER_KAPAL_PARENGGE.length : 0;
-  const bO = document.getElementById('badgeCountOngkir');
-  const bP = document.getElementById('badgeCountParengge');
-  if (bO) bO.textContent = countOngkir;
-  if (bP) bP.textContent = countParengge;
-
   const titleSummary = document.getElementById('titleSummaryMasterList');
-  const badgeSummary = document.getElementById('badgeCountMasterList');
   if (titleSummary) {
     titleSummary.textContent = currentMasterTab === 'ongkir' ? 'Daftar Nama Kapal Ongkir' : 'Daftar Nama Kapal Parengge';
-  }
-  if (badgeSummary) {
-    badgeSummary.textContent = currentMasterTab === 'ongkir' ? countOngkir : countParengge;
   }
 
   const unsavedAlert = document.getElementById('masterUnsavedAlert');
@@ -324,7 +310,6 @@ function renderMasterKapalList() {
     if (isEditing) {
       html += `
         <div class="master-item-row editing">
-          <span class="master-item-number">${item.originalIndex + 1}</span>
           <div class="master-item-edit-box">
             <input type="text" id="inputEditMaster_${item.originalIndex}" class="master-edit-input" value="${escapeHtml(item.nama)}" onkeydown="if(event.key==='Enter') simpanEditMasterKapal(${item.originalIndex}); if(event.key==='Escape') batalEditMasterKapal();">
             <button type="button" class="btn-master-save-edit" onclick="simpanEditMasterKapal(${item.originalIndex})" title="Simpan Perubahan">✓ Simpan</button>
@@ -335,7 +320,6 @@ function renderMasterKapalList() {
     } else {
       html += `
         <div class="master-item-row">
-          <span class="master-item-number">${item.originalIndex + 1}</span>
           <span class="master-item-name" title="${escapeHtml(item.nama)}">${escapeHtml(item.nama)}</span>
           <div class="master-item-actions">
             <button type="button" class="btn-master-item-action edit" onclick="bukaEditMasterKapal(${item.originalIndex})" title="Edit nama kapal ini">

@@ -175,6 +175,11 @@ function bukaModalTambahPelayaran(defaultTanggal = "") {
   const todayStr = new Date().toISOString().split("T")[0];
   const tglVal = defaultTanggal || todayStr;
 
+  const masterList = typeof getMasterKapalOngkir === "function"
+    ? getMasterKapalOngkir()
+    : ((Array.isArray(MASTER_KAPAL_ONGKIR) && MASTER_KAPAL_ONGKIR.length > 0) ? MASTER_KAPAL_ONGKIR : DEFAULT_MASTER_KAPAL_ONGKIR);
+  const dlOptions = masterList.map(k => `<option value="${escapeHtml(k)}">`).join("");
+
   modal.innerHTML = `
     <div class="modal-content" style="max-width: 480px; padding: 1.4rem;">
       <div class="modal-top-bar" style="margin-bottom: 1.25rem;">
@@ -186,7 +191,8 @@ function bukaModalTambahPelayaran(defaultTanggal = "") {
         <div style="display: flex; flex-direction: column; gap: 0.85rem;">
           <div>
             <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Nama Kapal Ongkir *</label>
-            <input type="text" id="inpBaruNamaKapal" list="listMasterOngkir" class="search-input" value="" required style="width: 100%; text-transform: uppercase;" placeholder="Pilih / ketik nama kapal ongkir..." autocomplete="off">
+            <input type="text" id="inpBaruNamaKapal" list="listMasterOngkirModal" class="search-input" value="" required style="width: 100%; text-transform: uppercase;" placeholder="Pilih / ketik nama kapal ongkir..." autocomplete="off">
+            <datalist id="listMasterOngkirModal">${dlOptions}</datalist>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
@@ -196,7 +202,7 @@ function bukaModalTambahPelayaran(defaultTanggal = "") {
             </div>
             <div>
               <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Waktu Berangkat</label>
-              <input type="text" id="inpBaruWaktu" class="search-input" value="14.30" style="width: 100%;" placeholder="Contoh: 14.30">
+              <input type="text" id="inpBaruWaktu" class="search-input" value="" style="width: 100%;" placeholder="Contoh: 14.30">
             </div>
           </div>
 
@@ -214,7 +220,7 @@ function bukaModalTambahPelayaran(defaultTanggal = "") {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <div>
               <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Nomor Resi</label>
-              <input type="text" id="inpBaruResi" class="search-input" value="1" style="width: 100%;">
+              <input type="text" id="inpBaruResi" class="search-input" value="" style="width: 100%;" placeholder="Nomor resi (cth: 1)">
             </div>
             <div>
               <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Total Tertulis (Opsional)</label>
@@ -231,7 +237,6 @@ function bukaModalTambahPelayaran(defaultTanggal = "") {
     </div>
   `;
 
-  updateMasterOngkirDatalist();
   modal.classList.add("active");
   setTimeout(() => {
     const inp = document.getElementById("inpBaruNamaKapal");
@@ -264,9 +269,9 @@ async function handleSimpanPelayaranBaru(e) {
   }
 
   const juragan = sanitizeInput(inpJrg ? inpJrg.value : "").trim() || "-";
-  const waktu = sanitizeInput(inpWkt ? inpWkt.value : "14.30").trim() || "14.30";
-  const lokasi = sanitizeInput(inpLok ? inpLok.value : "DDL").trim() || "DDL";
-  const resi = sanitizeInput(inpRes ? inpRes.value : "1").trim() || "1";
+  const waktu = sanitizeInput(inpWkt ? inpWkt.value : "").trim();
+  const lokasi = sanitizeInput(inpLok ? inpLok.value : "").trim() || "DDL";
+  const resi = sanitizeInput(inpRes ? inpRes.value : "").trim() || "1";
   const tertulis = Math.max(0, Math.floor(Number(inpTot ? inpTot.value : 0) || 0));
 
   const tripKey = getNormalizedTripId(namaKapal, tanggal);
