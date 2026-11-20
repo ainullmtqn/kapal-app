@@ -3,8 +3,6 @@
 // PARENGGEKITA - SISTEM MANIFES KAPAL
 // ==========================================
 
-var currentParenggePill = 'SEMUA';
-
 function initMuatanView() {
   const container = document.getElementById("tabMuatan");
   if (!container || container.innerHTML.trim() !== "") return;
@@ -26,23 +24,10 @@ function initMuatanView() {
             <span class="btn-text">Segarkan</span>
           </button>
         </div>
-        <div class="filter-pills-wrap" id="parenggePillsWrap">
-          <div class="pill-btn active" onclick="setPillParengge('SEMUA', this)">Semua Riwayat (<span id="pillCountSemua">0</span>)</div>
-          <div class="pill-btn" onclick="setPillParengge('HARI_INI', this)">Kirim Hari Ini (<span id="pillCountHariIni">0</span>)</div>
-        </div>
       </div>
 
       <div class="parengge-grid" id="allMuatanList"></div>
   `;
-}
-
-function setPillParengge(type, el) {
-  initMuatanView();
-  document.querySelectorAll('#parenggePillsWrap .pill-btn').forEach(p => p.classList.remove('active'));
-  if (el) el.classList.add('active');
-  currentParenggePill = type;
-  const searchInput = document.getElementById("searchMuatanInput");
-  renderSemuaMuatan(searchInput ? searchInput.value : "");
 }
 
 function filterParenggeTab(query) {
@@ -88,30 +73,8 @@ function renderSemuaMuatan(searchQuery = "") {
   // Hanya kapal dengan riwayat pengiriman aktual
   let fullList = Object.values(aggregatedMap).filter(item => item.riwayat_pengiriman.length > 0);
 
-  // Tanggal aktif hari ini untuk filter pill
-  const todayWIB = (typeof getActiveDateWIB === "function") 
-    ? getActiveDateWIB() 
-    : new Date().toISOString().slice(0, 10);
-
-  const totalCount = fullList.length;
-  const hariIniCount = fullList.filter(item => 
-    item.riwayat_pengiriman.some(rip => String(rip.tanggal).trim() === todayWIB)
-  ).length;
-
-  const elSemua = document.getElementById("pillCountSemua");
-  const elHariIni = document.getElementById("pillCountHariIni");
-  if (elSemua) elSemua.textContent = totalCount;
-  if (elHariIni) elHariIni.textContent = hariIniCount;
-
-  // 2. Filter berdasarkan Pill (Semua vs Hari Ini)
+  // 2. Filter berdasarkan Input Pencarian
   let displayList = fullList;
-  if (currentParenggePill === 'HARI_INI') {
-    displayList = displayList.filter(item => 
-      item.riwayat_pengiriman.some(rip => String(rip.tanggal).trim() === todayWIB)
-    );
-  }
-
-  // 3. Filter berdasarkan Input Pencarian
   if (searchQuery) {
     const qLower = searchQuery.toLowerCase().trim();
     displayList = displayList.filter(item => {
@@ -123,7 +86,7 @@ function renderSemuaMuatan(searchQuery = "") {
     });
   }
 
-  // 4. Urutkan: Total muatan gabus terbanyak di atas, kemudian urut abjad
+  // 3. Urutkan: Total muatan gabus terbanyak di atas, kemudian urut abjad
   displayList.sort((a, b) => {
     if (b.total_gabus !== a.total_gabus) {
       return b.total_gabus - a.total_gabus;
@@ -136,17 +99,14 @@ function renderSemuaMuatan(searchQuery = "") {
     countBadge.textContent = fullList.length;
   }
 
-  // 5. Tampilan jika kosong
+  // 4. Tampilan jika kosong
   if (displayList.length === 0) {
-    let emptyMsg = "Belum ada catatan kapal parengge yang pernah kirim";
-    let emptySub = "Data kapal akan muncul otomatis setelah dicatat membawa muatan gabus pada nota pelayaran.";
-    if (searchQuery) {
-      emptyMsg = `Tidak ada kapal parengge yang cocok dengan "${escapeHtml(searchQuery)}"`;
-      emptySub = "Silakan periksa kembali ejaan pencarian Anda.";
-    } else if (currentParenggePill === 'HARI_INI') {
-      emptyMsg = "Belum ada kapal parengge yang mengirim muatan hari ini";
-      emptySub = "Pilih tab 'Semua Riwayat' untuk melihat seluruh riwayat kapal yang pernah kirim.";
-    }
+    const emptyMsg = searchQuery
+      ? `Tidak ada kapal parengge yang cocok dengan "${escapeHtml(searchQuery)}"`
+      : "Belum ada catatan kapal parengge yang pernah kirim";
+    const emptySub = searchQuery
+      ? "Silakan periksa kembali ejaan pencarian Anda."
+      : "Data kapal akan muncul otomatis setelah dicatat membawa muatan gabus pada nota pelayaran.";
 
     container.innerHTML = `
       <div class="card" style="grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
@@ -162,7 +122,7 @@ function renderSemuaMuatan(searchQuery = "") {
     return;
   }
 
-  // 6. Render kartu untuk setiap kapal yang pernah kirim
+  // 5. Render kartu untuk setiap kapal yang pernah kirim
   displayList.forEach((item) => {
     const card = document.createElement("div");
     card.className = "parengge-card";

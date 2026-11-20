@@ -19,94 +19,141 @@ function initSettingView() {
           </div>
         </div>
 
-        <!-- SUB-PAGE SWITCHER DALAM PENGATURAN: DATA vs LINK -->
-        <div class="setting-page-nav" id="settingSubNav">
-          <button type="button" class="btn-setting-page active" id="btnSubPageData" onclick="switchSettingSubPage('data')">
-            <span class="setting-nav-icon">📋</span>
-            <div class="setting-nav-text">
-              <span class="setting-nav-title">Master Data Kapal</span>
-              <span class="setting-nav-desc">Kelola nama kapal & cadangan JSON</span>
+        <!-- ============================================== -->
+        <!-- 1. HALAMAN MENU UTAMA PENGATURAN (HUB)        -->
+        <!-- ============================================== -->
+        <div id="settingPageMenu" class="setting-subpage">
+          <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.25rem;">
+            Pusat Pengaturan Sistem
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Pilih menu konfigurasi di bawah ini untuk mengelola database master kapal atau pengaturan koneksi online:
+          </div>
+
+          <div class="setting-menu-grid">
+            <!-- Menu 1: Master Data Kapal & Cadangan -->
+            <div class="setting-menu-card" onclick="bukaSettingHalaman('master')">
+              <div class="setting-menu-card-left">
+                <div class="setting-menu-icon">📋</div>
+                <div class="setting-menu-card-body">
+                  <div class="setting-menu-card-title">Master Data Kapal & Cadangan</div>
+                  <div class="setting-menu-card-desc">
+                    Kelola daftar nama Kapal Ongkir & Kapal Parengge untuk rekomendasi pencarian (auto-complete), serta unduh atau pulihkan file cadangan (JSON).
+                  </div>
+                  <div class="setting-menu-card-badge">
+                    <span id="badgeMenuMasterInfo">Kelola Database Kapal & Cadangan</span>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-menu-arrow">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </div>
             </div>
-          </button>
-          <button type="button" class="btn-setting-page" id="btnSubPageLink" onclick="switchSettingSubPage('link')">
-            <span class="setting-nav-icon">🔗</span>
-            <div class="setting-nav-text">
-              <span class="setting-nav-title">Koneksi & Tautan Webhook</span>
-              <span class="setting-nav-desc">Tautan Google Sheets & keamanan</span>
+
+            <!-- Menu 2: Koneksi dan Tautan Webhook -->
+            <div class="setting-menu-card" onclick="bukaSettingHalaman('koneksi')">
+              <div class="setting-menu-card-left">
+                <div class="setting-menu-icon">🔗</div>
+                <div class="setting-menu-card-body">
+                  <div class="setting-menu-card-title">Koneksi dan Tautan Webhook</div>
+                  <div class="setting-menu-card-desc">
+                    Tautan endpoint Google Apps Script untuk sinkronisasi Google Sheets, status proteksi keamanan sistem, dan bersihkan cache perangkat.
+                  </div>
+                  <div class="setting-menu-card-badge">
+                    <span>Spreadsheet Webhook & Keamanan</span>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-menu-arrow">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </div>
             </div>
-          </button>
+          </div>
         </div>
 
         <!-- ============================================== -->
-        <!-- SUB-HALAMAN 1: KELOLA MASTER DATA & CADANGAN   -->
+        <!-- 2. HALAMAN BARU: MASTER DATA KAPAL & CADANGAN -->
         <!-- ============================================== -->
-        <div id="settingSubPageData" class="setting-subpage">
-          <!-- 1. Master Daftar Nama Kapal (Database Kapal Ongkir & Parengge) -->
-          <div class="security-card-section" style="border-top: none; padding-top: 0;">
-            <div class="security-card-title-wrap" style="margin-bottom: 0.5rem;">
-              <span class="security-icon">📋</span>
+        <div id="settingPageMaster" class="setting-subpage" style="display: none;">
+          <button type="button" class="btn-setting-back" onclick="bukaSettingHalaman('menu')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Kembali ke Menu Pengaturan</span>
+          </button>
+
+          <div class="setting-page-header-wrap">
+            <div class="setting-page-title-box">
+              <span class="setting-page-icon">📋</span>
               <div>
-                <h3 class="setting-title" style="margin-bottom: 2px;">Master Daftar Nama Kapal (Database Kapal)</h3>
-                <div class="setting-desc" style="margin-bottom: 0;">Kelola daftar nama Kapal Ongkir & Kapal Parengge untuk rekomendasi pencarian (auto-complete). Perubahan dapat disimpan langsung ke Google Spreadsheet.</div>
+                <h3 class="setting-page-header-title">Master Data Kapal (Database Kapal)</h3>
+                <div class="setting-page-header-sub">Kelola daftar nama Kapal Ongkir & Kapal Parengge yang tersimpan di Google Spreadsheet</div>
               </div>
-            </div>
-
-            <!-- Switcher Tab Master: Ongkir / Parengge -->
-            <div class="master-tab-switch-bar">
-              <button type="button" class="btn-master-tab active" id="btnTabMasterOngkir" onclick="switchMasterTab('ongkir')">
-                <span>🚢 Kapal Ongkir</span>
-                <span class="master-tab-badge" id="badgeCountOngkir">37</span>
-              </button>
-              <button type="button" class="btn-master-tab" id="btnTabMasterParengge" onclick="switchMasterTab('parengge')">
-                <span>🐟 Kapal Parengge</span>
-                <span class="master-tab-badge" id="badgeCountParengge">34</span>
-              </button>
-            </div>
-
-            <!-- Toolbar Pencarian & Tambah Kapal Baru -->
-            <div class="master-toolbar-grid">
-              <div class="master-search-row">
-                <input type="text" id="searchMasterInput" class="master-input" placeholder="🔍 Cari nama kapal di daftar master..." oninput="filterMasterKapal(this.value)">
-              </div>
-              <div class="master-add-row">
-                <input type="text" id="inputTambahMasterKapal" class="master-input" placeholder="Nama Kapal Ongkir baru (cth: KMN SAMUDRA JAYA)..." onkeydown="if(event.key==='Enter') tambahMasterKapal();">
-                <button type="button" class="btn-master-add" onclick="tambahMasterKapal()">
-                  <span>➕ Tambah</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Bar Aksi Sync & Simpan ke Google Sheets -->
-            <div class="master-actions-bar">
-              <div class="master-actions-group">
-                <button type="button" class="btn-master-action primary" id="btnSimpanMasterSheets" onclick="simpanMasterKeSheets()" title="Simpan daftar nama kapal terbaru ke tab Database_Kapal di Spreadsheet">
-                  <span>☁️ Simpan ke Google Sheets</span>
-                </button>
-                <button type="button" class="btn-master-action" id="btnSyncMasterSheets" onclick="sinkronkanMasterDariSheets()" title="Ambil daftar nama kapal terbaru dari tab Database_Kapal di Spreadsheet">
-                  <span>🔄 Tarik dari Sheets</span>
-                </button>
-              </div>
-              <div>
-                <button type="button" class="btn-master-action" onclick="resetMasterKeStandar()" title="Kembalikan daftar kapal ke daftar bawaan standar">
-                  <span>↺ Standar</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Peringatan Perubahan Belum Disimpan -->
-            <div class="master-unsaved-alert" id="masterUnsavedAlert">
-              <span>⚠️</span>
-              <span>Terdapat perubahan lokal yang belum disimpan ke Google Sheets. Klik <strong>"Simpan ke Google Sheets"</strong> agar data online sinkron!</span>
-            </div>
-
-            <!-- Container Daftar Nama Kapal -->
-            <div class="master-list-container" id="masterKapalItemsList">
-              <!-- Diisi via renderMasterKapalList() -->
             </div>
           </div>
 
-          <!-- 2. Pusat Cadangan & Pemulihan Data (Data Protection & Recovery) -->
-          <div class="security-card-section" style="margin-top: 1.25rem;">
+          <!-- Switcher Tab Master: Ongkir / Parengge -->
+          <div class="master-tab-switch-bar">
+            <button type="button" class="btn-master-tab active" id="btnTabMasterOngkir" onclick="switchMasterTab('ongkir')">
+              <span>🚢 Kapal Ongkir</span>
+              <span class="master-tab-badge" id="badgeCountOngkir">37</span>
+            </button>
+            <button type="button" class="btn-master-tab" id="btnTabMasterParengge" onclick="switchMasterTab('parengge')">
+              <span>🐟 Kapal Parengge</span>
+              <span class="master-tab-badge" id="badgeCountParengge">34</span>
+            </button>
+          </div>
+
+          <!-- Toolbar Pencarian & Tambah Kapal Baru -->
+          <div class="master-toolbar-grid">
+            <div class="master-search-row">
+              <input type="text" id="searchMasterInput" class="master-input" placeholder="🔍 Cari nama kapal di daftar master..." oninput="filterMasterKapal(this.value)">
+            </div>
+            <div class="master-add-row">
+              <input type="text" id="inputTambahMasterKapal" class="master-input" placeholder="Nama Kapal Ongkir baru (cth: KMN SAMUDRA JAYA)..." onkeydown="if(event.key==='Enter') tambahMasterKapal();">
+              <button type="button" class="btn-master-add" onclick="tambahMasterKapal()">
+                <span>➕ Tambah</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bar Aksi Sync & Simpan ke Google Sheets -->
+          <div class="master-actions-bar">
+            <div class="master-actions-group">
+              <button type="button" class="btn-master-action primary" id="btnSimpanMasterSheets" onclick="simpanMasterKeSheets()" title="Simpan daftar nama kapal terbaru ke tab Database_Kapal di Spreadsheet">
+                <span>☁️ Simpan ke Google Sheets</span>
+              </button>
+              <button type="button" class="btn-master-action" id="btnSyncMasterSheets" onclick="sinkronkanMasterDariSheets()" title="Ambil daftar nama kapal terbaru dari tab Database_Kapal di Spreadsheet">
+                <span>🔄 Tarik dari Sheets</span>
+              </button>
+            </div>
+            <div>
+              <button type="button" class="btn-master-action" onclick="resetMasterKeStandar()" title="Kembalikan daftar kapal ke daftar bawaan standar">
+                <span>↺ Standar</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Peringatan Perubahan Belum Disimpan -->
+          <div class="master-unsaved-alert" id="masterUnsavedAlert">
+            <span>⚠️</span>
+            <span>Terdapat perubahan lokal yang belum disimpan ke Google Sheets. Klik <strong>"Simpan ke Google Sheets"</strong> agar data online sinkron!</span>
+          </div>
+
+          <!-- Container Daftar Nama Kapal -->
+          <div class="master-list-container" id="masterKapalItemsList">
+            <!-- Diisi via renderMasterKapalList() -->
+          </div>
+
+          <!-- Pusat Cadangan & Pemulihan Data (Data Protection & Recovery) -->
+          <div class="security-card-section" style="margin-top: 1.5rem;">
             <div class="security-card-title-wrap" style="margin-bottom: 0.5rem;">
               <span class="security-icon">🛡️</span>
               <div>
@@ -139,17 +186,35 @@ function initSettingView() {
         </div>
 
         <!-- ============================================== -->
-        <!-- SUB-HALAMAN 2: KONEKSI WEBHOOK & KEAMANAN      -->
+        <!-- 3. HALAMAN BARU: KONEKSI & TAUTAN WEBHOOK      -->
         <!-- ============================================== -->
-        <div id="settingSubPageLink" class="setting-subpage" style="display: none;">
-          <!-- 1. Kredensial Webhook Dilindungi -->
+        <div id="settingPageKoneksi" class="setting-subpage" style="display: none;">
+          <button type="button" class="btn-setting-back" onclick="bukaSettingHalaman('menu')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Kembali ke Menu Pengaturan</span>
+          </button>
+
+          <div class="setting-page-header-wrap">
+            <div class="setting-page-title-box">
+              <span class="setting-page-icon">🔗</span>
+              <div>
+                <h3 class="setting-page-header-title">Koneksi Database & Tautan Webhook</h3>
+                <div class="setting-page-header-sub">Tautan endpoint Google Apps Script untuk sinkronisasi online dan proteksi sistem</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kredensial Webhook Dilindungi -->
           <div class="security-card-section" style="border-top: none; padding-top: 0;">
             <div class="security-card-header">
               <div class="security-card-title-wrap">
-                <span class="security-icon">🔗</span>
+                <span class="security-icon">🌐</span>
                 <div>
-                  <h3 class="setting-title" style="margin-bottom: 2px;">Koneksi Database Webhook (GAS)</h3>
-                  <div class="setting-desc" style="margin-bottom: 0;">Tautan endpoint Google Apps Script untuk sinkronisasi manifes kapal.</div>
+                  <h3 class="setting-title" style="margin-bottom: 2px;">URL Endpoint Google Apps Script (GAS)</h3>
+                  <div class="setting-desc" style="margin-bottom: 0;">Tautan webhook database Google Spreadsheet untuk pelayaran dan muatan.</div>
                 </div>
               </div>
               <button type="button" class="btn-lock-toggle is-locked" id="btnToggleWebhookLock" onclick="toggleWebhookLock()">
@@ -177,7 +242,7 @@ function initSettingView() {
             </button>
           </div>
 
-          <!-- 2. Status Audit Proteksi Keamanan Fitur -->
+          <!-- Status Audit Proteksi Keamanan Fitur -->
           <div class="security-card-section" style="margin-top: 1.25rem; background: #f8fafc; border-radius: 10px; padding: 1rem;">
             <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 6px;">
               <span>🛡️</span> Status Proteksi Keamanan Fitur Web App
@@ -202,7 +267,7 @@ function initSettingView() {
             </div>
           </div>
 
-          <!-- 3. Pengelolaan Cache Lokal -->
+          <!-- Pengelolaan Cache Lokal -->
           <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1.25rem;">
             <div style="font-size: 0.84rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Cache Penyimpanan Perangkat</div>
             <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 0.6rem;">
@@ -217,34 +282,46 @@ function initSettingView() {
   `;
 
   setTimeout(() => {
-    switchSettingSubPage(currentSettingSubPage);
+    bukaSettingHalaman(currentSettingView);
   }, 10);
 }
 
 // ==========================================
-// SUB-HALAMAN NAVIGASI (DATA vs LINK)
+// NAVIGASI HALAMAN PENGATURAN (HUB & SUB-PAGES)
 // ==========================================
-var currentSettingSubPage = 'data'; // 'data' | 'link'
+var currentSettingView = 'menu'; // 'menu' | 'master' | 'koneksi'
+
+function bukaSettingHalaman(page) {
+  currentSettingView = page;
+  const pMenu = document.getElementById('settingPageMenu');
+  const pMaster = document.getElementById('settingPageMaster');
+  const pKoneksi = document.getElementById('settingPageKoneksi');
+
+  if (pMenu) pMenu.style.display = (page === 'menu') ? 'block' : 'none';
+  if (pMaster) pMaster.style.display = (page === 'master') ? 'block' : 'none';
+  if (pKoneksi) pKoneksi.style.display = (page === 'koneksi') ? 'block' : 'none';
+
+  if (page === 'master' && typeof renderMasterKapalList === 'function') {
+    renderMasterKapalList();
+  }
+
+  updateSettingMenuBadges();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateSettingMenuBadges() {
+  const badgeInfo = document.getElementById('badgeMenuMasterInfo');
+  if (badgeInfo) {
+    const oCount = Array.isArray(MASTER_KAPAL_ONGKIR) ? MASTER_KAPAL_ONGKIR.length : 0;
+    const pCount = Array.isArray(MASTER_KAPAL_PARENGGE) ? MASTER_KAPAL_PARENGGE.length : 0;
+    badgeInfo.textContent = `${oCount} Kapal Ongkir • ${pCount} Kapal Parengge`;
+  }
+}
 
 function switchSettingSubPage(page) {
-  currentSettingSubPage = page;
-  const pageData = document.getElementById('settingSubPageData');
-  const pageLink = document.getElementById('settingSubPageLink');
-  const btnData = document.getElementById('btnSubPageData');
-  const btnLink = document.getElementById('btnSubPageLink');
-
-  if (page === 'data') {
-    if (pageData) pageData.style.display = 'block';
-    if (pageLink) pageLink.style.display = 'none';
-    if (btnData) btnData.classList.add('active');
-    if (btnLink) btnLink.classList.remove('active');
-    if (typeof renderMasterKapalList === 'function') renderMasterKapalList();
-  } else {
-    if (pageData) pageData.style.display = 'none';
-    if (pageLink) pageLink.style.display = 'block';
-    if (btnData) btnData.classList.remove('active');
-    if (btnLink) btnLink.classList.add('active');
-  }
+  if (page === 'data') bukaSettingHalaman('master');
+  else if (page === 'link') bukaSettingHalaman('koneksi');
+  else bukaSettingHalaman(page);
 }
 
 function toggleWebhookLock() {
