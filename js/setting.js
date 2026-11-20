@@ -142,7 +142,7 @@ function renderAdminPasswordSection(isOpen = false) {
       <summary style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; background: #f8fafc; font-size: 0.84rem; font-weight: 800; color: var(--text-primary); user-select: none; outline: none; list-style: none;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 1.15rem;">🔐</span>
-          <span>Pengaturan Kata Sandi</span>
+          <span>Atur Sandi</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px; font-size: 0.73rem; color: var(--text-muted); font-weight: 600;">
           <span>Klik Buka / Tutup</span>

@@ -22,15 +22,6 @@ function initNavbar() {
 
         <!-- Desktop Nav Tabs -->
         <nav class="navbar-nav">
-          <div class="nav-link active" onclick="switchTab('warta', this)" id="navTabWarta">
-            <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
-              <path d="M18 14h-8"/>
-              <path d="M15 18h-5"/>
-              <path d="M10 6h8v4h-8V6Z"/>
-            </svg>
-            <span>Warta Hari Ini</span>
-          </div>
           <div class="nav-link" onclick="switchTab('dashboard', this)" id="navTabDashboard">
             <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -101,17 +92,6 @@ function initNavbar() {
   const bNav = document.getElementById("bottomNav");
   if (bNav && bNav.innerHTML.trim() === "") {
     bNav.innerHTML = `
-      <div class="nav-item active" onclick="switchTab('warta', this)" id="bottomTabWarta">
-        <div class="nav-icon-wrap">
-          <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
-            <path d="M18 14h-8"/>
-            <path d="M15 18h-5"/>
-            <path d="M10 6h8v4h-8V6Z"/>
-          </svg>
-        </div>
-        <span class="nav-label">Warta</span>
-      </div>
       <div class="nav-item" onclick="switchTab('dashboard', this)" id="bottomTabDashboard">
         <div class="nav-icon-wrap">
           <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -361,7 +341,6 @@ function switchTab(tabName, el) {
   // 1. Update Desktop Navbar link active state
   document.querySelectorAll('.navbar-nav .nav-link').forEach(link => link.classList.remove('active'));
   const desktopNavMap = {
-    warta: document.getElementById("navTabWarta"),
     dashboard: document.getElementById("navTabDashboard"),
     kapal: document.getElementById("navTabKapal"),
     muatan: document.getElementById("navTabMuatan"),
@@ -374,7 +353,6 @@ function switchTab(tabName, el) {
   // 2. Update Mobile Bottom Nav active state
   document.querySelectorAll('.bottom-nav .nav-item').forEach(item => item.classList.remove('active'));
   const mobileNavMap = {
-    warta: document.getElementById("bottomTabWarta"),
     dashboard: document.getElementById("bottomTabDashboard"),
     kapal: document.getElementById("bottomTabKapal"),
     muatan: document.getElementById("bottomTabMuatan"),
