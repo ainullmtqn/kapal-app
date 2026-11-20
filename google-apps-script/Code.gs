@@ -41,6 +41,31 @@
 var SPREADSHEET_ID = "1w4StmnR78nlq3zRmjXnGJ559EGK3ZqF_X5KeqIQSMeo";
 var TIMEZONE = "Asia/Makassar";
 
+var DEFAULT_MASTER_ONGKIR = [
+  "KMN BINTANG SOREANG", "KMN CAHAYA BARU", "KMN TUNAS HARAPAN", "KMN BARI BARIA",
+  "KMN BINTANG BKC", "KMN AISYAH 02", "KMN ALIKA JAYA", "KMN AMALIA",
+  "KMN MUARA BAHARI", "KMN BINTANG AL KHAFI", "KMN CAHAYA SALWA", "KMN PUTRI TUNGGAL",
+  "KMN BINTANG MUTIARA", "KMN ODONG ODONG", "KMN NUR KHALISTA", "KMN SINAR FAUZIA",
+  "KMN BINTANG DUA PUTRI", "KMN CAHAYA NUR AISYAH", "KMN BINTANG AJT", "KMN MANYIGARRI",
+  "KMN FAHRY JAYA", "KMN BINTANG NADITA", "KMN ALIZA JAYA", "KMN FAIZ JAYA",
+  "KMN BINTANG CN", "KMN CAHAYA YUNNA", "KMN BINTANG CAHAYA YUNNA", "KMN BINTANG DPS",
+  "KMN IRFAN JAYA BBL", "KMN BIRU BIRU", "KMN CAHAYA BULAN", "KMN JABAL NUR",
+  "KMN ALZAKI", "KMN IQBAL JAYA", "KMN BINTANG MADINA", "KMN NUR HIKMA 02",
+  "KMN SABARI UTAMA"
+];
+
+var DEFAULT_MASTER_PARENGGE = [
+  "BTG 01", "ALAM SURGA", "ALHAMIDI 01", "ALHAMIDI 02",
+  "ANWAR SH", "BARI BIRU", "BARI MUDA", "BINTANG 33",
+  "BINTANG 88", "BINTANG ALAM", "BINTANG HARAPAN", "BINTANG KEJORA 01",
+  "BINTANG KEJORA 02", "BINTANG KEJORA 55", "BINTANG MUSAFIR 01", "BINTANG RAJA CF 04",
+  "BULU JAYA", "BUNGA JAYA", "CAHAYA BINTANG", "CB 06",
+  "CB 10", "CHOKI COKI", "CORA CORA", "DENSAR",
+  "DEWA BATARA 01", "DUA PUTRA", "GARUDA CITY", "JUKU JUKU",
+  "KEJORA GHIFARI", "KIBAR", "TINGGI MONCONG", "SUMBER JAYA",
+  "SAMPOERNA", "TABBING TABBING"
+];
+
 function getSpreadsheet() {
   try {
     var active = SpreadsheetApp.getActiveSpreadsheet();
@@ -158,27 +183,46 @@ function doGet(e) {
       }
     }
 
-    // 2. Baca Tab Rincian_Muatan (sheetId: 1001 atau nama yang cocok)
-    var sheetRincian = findSheet(ss, 1001, ["Rincian_Muatan", "RincianMuatan", "Rincian"]) || (ss.getSheets().length > 1 ? ss.getSheets()[1] : null);
+    // 2. Baca Tab Rincian_Muatan (sheetId: 1001 atau nama yang cocok atau sheet index 1)
+    var sheetRincian = findSheet(ss, 1001, ["Rincian_Muatan", "RincianMuatan", "Rincian", "Muatan"]) || (ss.getSheets().length > 1 ? ss.getSheets()[1] : null);
 
     var rincian = [];
     if (sheetRincian && sheetRincian.getLastRow() >= 2) {
-      var maxCols = Math.max(sheetRincian.getLastColumn(), 8);
-      var dataRincian = sheetRincian.getRange(2, 1, sheetRincian.getLastRow() - 1, maxCols).getValues();
-      for (var j = 0; j < dataRincian.length; j++) {
-        var rRow = dataRincian[j];
-        var rKunci = String(rRow[1] || "").trim();
-        var rNamaParengge = String(rRow[4] || "").trim();
-        var rNamaOngkir = String(rRow[3] || "").trim();
-        var rTgl = formatDateIso(rRow[2]);
+      var allRData = sheetRincian.getDataRange().getValues();
+      var rHeader = allRData[0] || [];
+      var idxKunci = 1;
+      var idxTgl = 2;
+      var idxOngkir = 3;
+      var idxParengge = 4;
+      var idxJml = 5;
+      var idxSat = 6;
+      var idxRp = 7;
+
+      for (var c = 0; c < rHeader.length; c++) {
+        var hTitle = String(rHeader[c] || "").toLowerCase().replace(/[\s_\-]+/g, "");
+        if (hTitle.indexOf("kunci") !== -1) idxKunci = c;
+        else if (hTitle.indexOf("parengge") !== -1 || hTitle.indexOf("pemilik") !== -1) idxParengge = c;
+        else if (hTitle.indexOf("ongkir") !== -1 && hTitle.indexOf("rp") === -1 && hTitle.indexOf("biaya") === -1 && hTitle.indexOf("subtotal") === -1) idxOngkir = c;
+        else if (hTitle.indexOf("tgl") !== -1 || hTitle.indexOf("tanggal") !== -1) idxTgl = c;
+        else if (hTitle.indexOf("gabus") !== -1 || hTitle.indexOf("jumlah") !== -1) idxJml = c;
+        else if (hTitle.indexOf("satuan") !== -1) idxSat = c;
+        else if (hTitle.indexOf("rp") !== -1 || hTitle.indexOf("biaya") !== -1) idxRp = c;
+      }
+
+      for (var j = 1; j < allRData.length; j++) {
+        var rRow = allRData[j];
+        var rKunci = String(rRow[idxKunci] || "").trim();
+        var rNamaParengge = String(rRow[idxParengge] || "").trim();
+        var rNamaOngkir = String(rRow[idxOngkir] || "").trim();
+        var rTgl = formatDateIso(rRow[idxTgl]);
 
         if (!rKunci && !rNamaParengge) continue;
         if (!rKunci) {
           rKunci = rNamaOngkir + "_" + rTgl;
         }
 
-        var jml = Math.max(0, Math.floor(Number(rRow[5]) || 0));
-        var ongk = Number(rRow[7]) || 0;
+        var jml = Math.max(0, Math.floor(Number(rRow[idxJml]) || 0));
+        var ongk = Number(rRow[idxRp]) || 0;
 
         rincian.push({
           timestamp: rRow[0] instanceof Date ? Utilities.formatDate(rRow[0], TIMEZONE, "yyyy-MM-dd HH:mm:ss") : String(rRow[0] || ""),
@@ -190,17 +234,17 @@ function doGet(e) {
           nama_pemilik: rNamaParengge,
           jumlah_gabus: jml,
           jumlah: jml,
-          satuan: String(rRow[6] || "Gabus").trim(),
+          satuan: String(rRow[idxSat] || "Gabus").trim(),
           ongkir_rp: ongk,
           ongkir: ongk
         });
       }
     }
 
-    // 3. Baca Tab Database_Kapal (sheetId: 2001 atau nama yang cocok)
+    // 3. Baca Tab Database_Kapal (sheetId: 2001 atau nama yang cocok atau sheet index 2)
     var masterOngkir = [];
     var masterParengge = [];
-    var sheetMaster = findSheet(ss, 2001, ["Database_Kapal", "DatabaseKapal", "MasterKapal", "Database", "Kapal"]);
+    var sheetMaster = findSheet(ss, 2001, ["Database_Kapal", "DatabaseKapal", "MasterKapal", "Database", "Kapal", "Master"]) || (ss.getSheets().length > 2 ? ss.getSheets()[2] : null);
     if (sheetMaster && sheetMaster.getLastRow() >= 2) {
       var allMaster = sheetMaster.getDataRange().getValues();
       var colOngkirIdx = 1;   // Default: B (indeks 1)
@@ -230,6 +274,14 @@ function doGet(e) {
           }
         }
       }
+    }
+
+    // Fallback cerdas jika data master dari spreadsheet kosong
+    if (masterParengge.length === 0) {
+      masterParengge = DEFAULT_MASTER_PARENGGE.slice();
+    }
+    if (masterOngkir.length === 0) {
+      masterOngkir = DEFAULT_MASTER_ONGKIR.slice();
     }
 
     return jsonResponse({
@@ -268,8 +320,8 @@ function doPost(e) {
     }
 
     var ss = getSpreadsheet();
-    var sheetRekap = findSheet(ss, 0, ["Rekap_Ongkir", "RekapOngkir", "Rekap"]) || ss.getSheets()[0];
-    var sheetRincian = findSheet(ss, 1001, ["Rincian_Muatan", "RincianMuatan", "Rincian"]) || (ss.getSheets().length > 1 ? ss.getSheets()[1] : null);
+    var sheetRekap = findSheet(ss, 0, ["Rekap_Ongkir", "RekapOngkir", "Rekap", "Ongkir"]) || ss.getSheets()[0];
+    var sheetRincian = findSheet(ss, 1001, ["Rincian_Muatan", "RincianMuatan", "Rincian", "Muatan"]) || (ss.getSheets().length > 1 ? ss.getSheets()[1] : null);
 
     var nowStr = Utilities.formatDate(new Date(), TIMEZONE, "yyyy-MM-dd HH:mm:ss");
     var kunci = String(payload.kunci_unik || "").trim();

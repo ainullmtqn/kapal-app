@@ -8,11 +8,15 @@ function initKapalView() {
   if (!container || container.innerHTML.trim() !== "") return;
 
   container.innerHTML = `
-      <div class="section-header" style="margin-bottom: 0.85rem;">
+      <datalist id="listMasterOngkir"></datalist>
+      <div class="section-header" style="margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
         <div>
           <h2 class="section-title">Database Pelayaran Kapal</h2>
           <div class="section-subtitle">Daftar seluruh manifest kedatangan kapal dan rincian muatan</div>
         </div>
+        <button class="btn-action" onclick="bukaModalTambahPelayaran()" style="background: var(--ocean); font-size: 0.82rem; padding: 0.55rem 0.95rem;">
+          ➕ Tambah Pelayaran Baru
+        </button>
       </div>
 
       <div class="search-card">
@@ -39,6 +43,8 @@ function initKapalView() {
         </div>
       </div>
   `;
+
+  updateMasterOngkirDatalist();
 }
 
 function setPillFilter(type, el) {
@@ -96,7 +102,11 @@ function renderDaftarKapal() {
   if (filteredPelayaran.length === 0) {
     container.innerHTML = `
       <div class="card" style="grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-        Tidak ada data kapal yang sesuai pencarian / filter.
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🚢</div>
+        <p style="margin-bottom: 1rem; font-weight: 600; color: var(--text-primary);">Belum ada data pelayaran kapal yang sesuai filter.</p>
+        <button class="btn-action" onclick="bukaModalTambahPelayaran()" style="margin: 0 auto; background: var(--ocean);">
+          ➕ Tambah Pelayaran Baru
+        </button>
       </div>
     `;
     return;
@@ -136,5 +146,166 @@ function renderDaftarKapal() {
     `;
     container.appendChild(card);
   });
+}
+
+// ==========================================
+// MODAL TAMBAH PELAYARAN / NOTA BARU
+// ==========================================
+
+function updateMasterOngkirDatalist() {
+  const dl = document.getElementById("listMasterOngkir");
+  if (!dl) return;
+  const list = typeof getMasterKapalOngkir === "function" 
+    ? getMasterKapalOngkir() 
+    : ((Array.isArray(MASTER_KAPAL_ONGKIR) && MASTER_KAPAL_ONGKIR.length > 0) ? MASTER_KAPAL_ONGKIR : DEFAULT_MASTER_KAPAL_ONGKIR);
+  dl.innerHTML = list.map(k => `<option value="${escapeHtml(k)}">`).join("");
+}
+
+function bukaModalTambahPelayaran(defaultTanggal = "") {
+  const modal = document.getElementById("tambahPelayaranModal");
+  if (!modal) return;
+  
+  const todayStr = new Date().toISOString().split("T")[0];
+  const tglVal = defaultTanggal || todayStr;
+  
+  const masterOngkir = typeof getMasterKapalOngkir === "function"
+    ? getMasterKapalOngkir()
+    : ((Array.isArray(MASTER_KAPAL_ONGKIR) && MASTER_KAPAL_ONGKIR.length > 0) ? MASTER_KAPAL_ONGKIR : DEFAULT_MASTER_KAPAL_ONGKIR);
+  const defaultKapal = masterOngkir.length > 0 ? masterOngkir[0] : "KMN AMALIA";
+
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 480px; padding: 1.5rem;">
+      <div class="modal-top-bar" style="margin-bottom: 1.25rem;">
+        <span style="font-weight: 800; font-size: 1.05rem; color: var(--text-primary);">➕ Tambah Pelayaran / Nota Baru</span>
+        <button type="button" class="btn-close" onclick="tutupModalTambahPelayaran()">✕</button>
+      </div>
+
+      <form id="formTambahPelayaran" onsubmit="handleSimpanPelayaranBaru(event)">
+        <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Nama Kapal Ongkir *</label>
+            <input type="text" id="inpBaruNamaKapal" list="listMasterOngkir" class="search-input" value="${escapeHtml(defaultKapal)}" required style="width: 100%;" placeholder="Pilih / ketik nama kapal ongkir...">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Tanggal *</label>
+              <input type="date" id="inpBaruTanggal" class="search-input" value="${escapeHtml(tglVal)}" required style="width: 100%;">
+            </div>
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Waktu Berangkat</label>
+              <input type="text" id="inpBaruWaktu" class="search-input" value="14.30" style="width: 100%;" placeholder="Contoh: 14.30">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Juragan</label>
+              <input type="text" id="inpBaruJuragan" class="search-input" placeholder="Nama juragan..." style="width: 100%;">
+            </div>
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Lokasi Muat</label>
+              <input type="text" id="inpBaruLokasi" class="search-input" value="DDL" style="width: 100%;">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Nomor Resi</label>
+              <input type="text" id="inpBaruResi" class="search-input" value="1" style="width: 100%;">
+            </div>
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Total Tertulis (Opsional)</label>
+              <input type="number" id="inpBaruTotalTertulis" class="search-input" min="0" placeholder="0" style="width: 100%;">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 0.75rem;">
+            <button type="button" class="btn-action" onclick="tutupModalTambahPelayaran()" style="background: #64748b;">Batal</button>
+            <button type="submit" class="btn-action" style="background: var(--ocean);">✓ Simpan & Buka Nota</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+
+  updateMasterOngkirDatalist();
+  modal.classList.add("active");
+}
+
+function tutupModalTambahPelayaran() {
+  const modal = document.getElementById("tambahPelayaranModal");
+  if (modal) modal.classList.remove("active");
+}
+
+function handleSimpanPelayaranBaru(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const inpKapal = document.getElementById("inpBaruNamaKapal");
+  const inpTgl = document.getElementById("inpBaruTanggal");
+  const inpWkt = document.getElementById("inpBaruWaktu");
+  const inpJrg = document.getElementById("inpBaruJuragan");
+  const inpLok = document.getElementById("inpBaruLokasi");
+  const inpRes = document.getElementById("inpBaruResi");
+  const inpTot = document.getElementById("inpBaruTotalTertulis");
+
+  const rawKapal = inpKapal ? inpKapal.value : "";
+  const namaKapal = sanitizeInput(rawKapal).trim();
+  const tanggal = normalizeDateKey(inpTgl ? inpTgl.value : "").trim();
+  if (!namaKapal || !tanggal) {
+    alert("Harap isi Nama Kapal Ongkir dan Tanggal.");
+    return;
+  }
+
+  const juragan = sanitizeInput(inpJrg ? inpJrg.value : "").trim();
+  const waktu = sanitizeInput(inpWkt ? inpWkt.value : "14.30").trim();
+  const lokasi = sanitizeInput(inpLok ? inpLok.value : "DDL").trim();
+  const resi = sanitizeInput(inpRes ? inpRes.value : "1").trim();
+  const tertulis = Math.max(0, Math.floor(Number(inpTot ? inpTot.value : 0) || 0));
+
+  const tripKey = `${namaKapal}_${tanggal}`;
+
+  // Cek apakah pelayaran ini sudah ada
+  let existing = allPelayaran.find(p => {
+    const pK = String(p.kunci_unik || "").trim().toLowerCase();
+    return pK === tripKey.toLowerCase();
+  });
+
+  if (!existing) {
+    const newShip = {
+      timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
+      kunci_unik: tripKey,
+      tanggal: tanggal,
+      nama_kapal_ongkir: namaKapal,
+      nama_kapal: namaKapal,
+      juragan: juragan,
+      lokasi_muat: lokasi,
+      waktu_berangkat: waktu,
+      total_tertulis: tertulis,
+      total_terhitung: 0,
+      total_hitung: 0,
+      selisih: tertulis > 0 ? tertulis : 0,
+      status_selisih: tertulis > 0 ? "SELISIH" : "SESUAI",
+      subtotal_ongkir: 0,
+      subtotal: 0,
+      potongan: 0,
+      total_bersih: 0,
+      resi: resi
+    };
+    allPelayaran.unshift(newShip);
+    try {
+      localStorage.setItem("CACHE_PELAYARAN", JSON.stringify(allPelayaran));
+    } catch (_) {}
+  }
+
+  tutupModalTambahPelayaran();
+
+  if (typeof renderWartaHariIni === "function") renderWartaHariIni(tanggal);
+  if (typeof renderDashboard === "function") renderDashboard();
+  if (typeof filterData === "function") filterData();
+
+  // Langsung buka modal nota agar user bisa mengisi rincian kapal parengge
+  setTimeout(() => {
+    bukaNota(tripKey);
+  }, 100);
 }
 

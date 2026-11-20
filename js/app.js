@@ -231,7 +231,7 @@ function switchTab(tabName, el) {
     if (typeof renderDashboard === "function") renderDashboard();
     if (dailyChartInstance) {
       setTimeout(() => {
-        try { dailyChartInstance.resize(); } catch (_) {}
+        try { dailyChartInstance.resize(); } catch (_) { }
       }, 50);
     }
   } else if (tabName === 'kapal') {
@@ -361,6 +361,6 @@ window.addEventListener("resize", () => {
   if (dailyChartInstance && currentTab === 'dashboard') {
     try {
       dailyChartInstance.resize();
-    } catch (_) {}
+    } catch (_) { }
   }
 });

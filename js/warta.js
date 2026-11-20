@@ -244,7 +244,10 @@ function renderWartaHariIni(targetDate = "") {
           <button class="btn-action" onclick="setWartaHariIni()" style="font-size: 0.8rem;">
             📅 Cek Hari Ini
           </button>
-          <button class="btn-action" onclick="switchTab('dashboard')" style="background: var(--ocean); font-size: 0.8rem;">
+          <button class="btn-action" onclick="bukaModalTambahPelayaran('${escapeHtml(targetDate)}')" style="background: var(--ocean); font-size: 0.8rem;">
+            ➕ Input Pelayaran Baru
+          </button>
+          <button class="btn-action" onclick="switchTab('dashboard')" style="background: #475569; font-size: 0.8rem;">
             ⚙️ Masuk ke Halaman Admin
           </button>
         </div>

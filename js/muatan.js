@@ -60,7 +60,10 @@ function renderSemuaMuatan(searchQuery = "") {
   // 1. Agregasi: Inisialisasi dari Master Database Kapal Parengge
   let aggregatedMap = {};
 
-  const masterList = Array.isArray(MASTER_KAPAL_PARENGGE) ? MASTER_KAPAL_PARENGGE : [];
+  const masterList = typeof getMasterKapalParengge === "function"
+    ? getMasterKapalParengge()
+    : ((Array.isArray(MASTER_KAPAL_PARENGGE) && MASTER_KAPAL_PARENGGE.length > 0) ? MASTER_KAPAL_PARENGGE : DEFAULT_MASTER_KAPAL_PARENGGE);
+
   masterList.forEach((namaMaster) => {
     const raw = String(namaMaster || "").trim();
     if (!raw) return;
@@ -78,7 +81,7 @@ function renderSemuaMuatan(searchQuery = "") {
   // 2. Gabungkan data riwayat muatan aktual dari allRincian
   if (Array.isArray(allRincian)) {
     allRincian.forEach((r) => {
-      let rawName = String(r.nama_kapal_parengge || r.nama_pemilik || "").trim();
+      let rawName = String(r.nama_kapal_parengge || r.nama_pemilik || r.nama || "").trim();
       if (!rawName) rawName = "Tanpa Nama";
       let key = rawName.toLowerCase();
 

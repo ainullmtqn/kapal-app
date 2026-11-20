@@ -40,7 +40,9 @@ function initNotaModalView() {
 function updateMasterParenggeDatalist() {
   const dl = document.getElementById("listMasterParengge");
   if (!dl) return;
-  const list = Array.isArray(MASTER_KAPAL_PARENGGE) ? MASTER_KAPAL_PARENGGE : [];
+  const list = typeof getMasterKapalParengge === "function" 
+    ? getMasterKapalParengge() 
+    : ((Array.isArray(MASTER_KAPAL_PARENGGE) && MASTER_KAPAL_PARENGGE.length > 0) ? MASTER_KAPAL_PARENGGE : DEFAULT_MASTER_KAPAL_PARENGGE);
   dl.innerHTML = list.map(p => `<option value="${escapeHtml(p)}">`).join("");
 }
 
@@ -51,8 +53,9 @@ function bukaNota(kunciUnik) {
   const targetKey = String(kunciUnik).trim().toLowerCase();
 
   activeKapal = allPelayaran.find(p => {
-    const pKunci = (p.kunci_unik || getNormalizedTripId(p.nama_kapal_ongkir || p.nama_kapal, p.tanggal)).trim().toLowerCase();
-    return pKunci === targetKey;
+    const pKunci = String(p.kunci_unik || "").trim().toLowerCase();
+    const pGen = getNormalizedTripId(p.nama_kapal_ongkir || p.nama_kapal, p.tanggal).trim().toLowerCase();
+    return pKunci === targetKey || pGen === targetKey;
   });
 
   if (!activeKapal) {
@@ -64,7 +67,10 @@ function bukaNota(kunciUnik) {
 
   if (!activeKapal) return;
 
-  activeKapal.kunci_unik = getNormalizedTripId(activeKapal.nama_kapal_ongkir || activeKapal.nama_kapal, activeKapal.tanggal, activeKapal.kunci_unik);
+  // JANGAN timpa kunci_unik yang sudah valid dari database
+  if (!activeKapal.kunci_unik || !String(activeKapal.kunci_unik).trim()) {
+    activeKapal.kunci_unik = getNormalizedTripId(activeKapal.nama_kapal_ongkir || activeKapal.nama_kapal, activeKapal.tanggal);
+  }
 
   const muatanKapal = allRincian.filter(r => isSameTripRecord(r, activeKapal));
 
@@ -72,7 +78,7 @@ function bukaNota(kunciUnik) {
     let ongkirTersimpan = validateOngkir(m.ongkir_rp !== undefined ? m.ongkir_rp : m.ongkir);
     let gabus = Math.max(0, Math.floor(Number(m.jumlah_gabus !== undefined ? m.jumlah_gabus : m.jumlah) || 0));
     return {
-      nama: sanitizeInput(m.nama_kapal_parengge || m.nama_pemilik || "Tanpa Nama"),
+      nama: sanitizeInput(m.nama_kapal_parengge || m.nama_pemilik || m.nama || "Tanpa Nama"),
       gabus: gabus,
       ongkir: ongkirTersimpan
     };
@@ -95,9 +101,10 @@ function tutupNota() {
 }
 
 function tambahBarisManual() {
-  const defaultNama = (Array.isArray(MASTER_KAPAL_PARENGGE) && MASTER_KAPAL_PARENGGE.length > 0)
-    ? MASTER_KAPAL_PARENGGE[0]
-    : "Kapal Parengge Baru";
+  const list = typeof getMasterKapalParengge === "function" 
+    ? getMasterKapalParengge() 
+    : ((Array.isArray(MASTER_KAPAL_PARENGGE) && MASTER_KAPAL_PARENGGE.length > 0) ? MASTER_KAPAL_PARENGGE : DEFAULT_MASTER_KAPAL_PARENGGE);
+  const defaultNama = list.length > 0 ? list[0] : "BTG 01";
 
   notaItems.push({
     nama: defaultNama,
@@ -181,7 +188,7 @@ function renderBlangkoNota() {
             <td style="padding-left: 5px;">
               <span class="print-text text-left" id="txtPrintNama_${idx}">${safeNama}</span>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
-                <input type="text" class="inp-nama no-print" list="listMasterParengge" value="${safeNama}" oninput="updateNamaItem(${idx}, this.value)" style="flex: 1;" placeholder="Pilih / ketik nama kapal parengge...">
+                <input type="text" class="inp-nama no-print" list="listMasterParengge" value="${safeNama}" oninput="updateNamaItem(${idx}, this.value)" onchange="updateNamaItem(${idx}, this.value)" style="flex: 1;" placeholder="Pilih / ketik nama kapal parengge...">
                 <button type="button" class="btn-del-item no-print" onclick="hapusBaris(${idx})" title="Hapus Baris">🗑️</button>
               </div>
             </td>

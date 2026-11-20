@@ -75,6 +75,20 @@ var MASTER_KAPAL_PARENGGE = (function() {
   return [...DEFAULT_MASTER_KAPAL_PARENGGE];
 })();
 
+function getMasterKapalParengge() {
+  if (Array.isArray(MASTER_KAPAL_PARENGGE) && MASTER_KAPAL_PARENGGE.length > 0) {
+    return MASTER_KAPAL_PARENGGE;
+  }
+  return [...DEFAULT_MASTER_KAPAL_PARENGGE];
+}
+
+function getMasterKapalOngkir() {
+  if (Array.isArray(MASTER_KAPAL_ONGKIR) && MASTER_KAPAL_ONGKIR.length > 0) {
+    return MASTER_KAPAL_ONGKIR;
+  }
+  return [...DEFAULT_MASTER_KAPAL_ONGKIR];
+}
+
 // ==========================================
 // SANITASI INPUT ANTI-XSS & SECURITY NOTIFICATIONS
 // ==========================================
@@ -259,6 +273,9 @@ function normalizeDateKey(tglStr) {
 // ==========================================
 
 function getNormalizedTripId(namaKapal, tanggal, fallbackKunci = "") {
+  if (fallbackKunci && String(fallbackKunci).trim()) {
+    return String(fallbackKunci).trim();
+  }
   const k = (namaKapal || "").toString().trim();
   const rawTgl = (tanggal || "").toString().trim();
   const normDate = normalizeDateKey(rawTgl);
@@ -268,9 +285,6 @@ function getNormalizedTripId(namaKapal, tanggal, fallbackKunci = "") {
   }
   if (k && rawTgl) {
     return `${k}_${rawTgl}`;
-  }
-  if (fallbackKunci && String(fallbackKunci).trim()) {
-    return String(fallbackKunci).trim();
   }
   return k || normDate || "trip_unknown";
 }
@@ -285,14 +299,15 @@ function isSameTripRecord(r, kapal) {
     return true;
   }
 
+  // 2. Cek kecocokan Nama Kapal Ongkir & Tanggal
   const rKapal = (r.nama_kapal_ongkir || r.nama_kapal || "").trim().toLowerCase();
   const kKapal = (kapal.nama_kapal_ongkir || kapal.nama_kapal || "").trim().toLowerCase();
 
   if (rKapal && kKapal && rKapal === kKapal) {
     const rDate = normalizeDateKey(r.tanggal);
     const kDate = normalizeDateKey(kapal.tanggal);
-    if (rDate && kDate) {
-      return rDate === kDate;
+    if (rDate && kDate && rDate === kDate) {
+      return true;
     }
     if (r.tanggal && kapal.tanggal) {
       const rTgl = String(r.tanggal).trim().toLowerCase();
@@ -300,16 +315,20 @@ function isSameTripRecord(r, kapal) {
       if (rTgl === kTgl) return true;
       const cleanR = rTgl.replace(/[^0-9]/g, "");
       const cleanK = kTgl.replace(/[^0-9]/g, "");
-      if (cleanR && cleanK) {
-        return cleanR === cleanK;
+      if (cleanR && cleanK && cleanR === cleanK) {
+        return true;
       }
     }
   }
 
-  const rTripId = getNormalizedTripId(rKapal, r.tanggal, r.kunci_unik).trim().toLowerCase();
-  const kTripId = getNormalizedTripId(kKapal, kapal.tanggal, kapal.kunci_unik).trim().toLowerCase();
-  if (rTripId && kTripId && rTripId === kTripId) {
-    return true;
+  // 3. Fallback jika salah satu kunci tersimpan sebagai string format nama_tanggal
+  if (kKapal) {
+    const kDate = normalizeDateKey(kapal.tanggal);
+    if (kDate && rKunci === `${kKapal}_${kDate}`.toLowerCase()) return true;
+  }
+  if (rKapal) {
+    const rDate = normalizeDateKey(r.tanggal);
+    if (rDate && kKunci === `${rKapal}_${rDate}`.toLowerCase()) return true;
   }
 
   return false;
@@ -324,7 +343,10 @@ function normalizeDatasetTripIds(pelayaranList, rincianList) {
         if (!p.nama_kapal_ongkir && p.nama_kapal) p.nama_kapal_ongkir = p.nama_kapal;
         if (p.total_terhitung !== undefined && p.total_hitung === undefined) p.total_hitung = p.total_terhitung;
         if (p.total_hitung !== undefined && p.total_terhitung === undefined) p.total_terhitung = p.total_hitung;
-        p.kunci_unik = getNormalizedTripId(p.nama_kapal || p.nama_kapal_ongkir, p.tanggal, p.kunci_unik);
+        // JANGAN timpa kunci_unik yang sudah valid dari database
+        if (!p.kunci_unik || !String(p.kunci_unik).trim()) {
+          p.kunci_unik = getNormalizedTripId(p.nama_kapal || p.nama_kapal_ongkir, p.tanggal);
+        }
       }
     });
   }
@@ -340,7 +362,10 @@ function normalizeDatasetTripIds(pelayaranList, rincianList) {
         if (r.jumlah !== undefined && r.jumlah_gabus === undefined) r.jumlah_gabus = r.jumlah;
         if (r.ongkir_rp !== undefined && r.ongkir === undefined) r.ongkir = r.ongkir_rp;
         if (r.ongkir !== undefined && r.ongkir_rp === undefined) r.ongkir_rp = r.ongkir;
-        r.kunci_unik = getNormalizedTripId(r.nama_kapal || r.nama_kapal_ongkir, r.tanggal, r.kunci_unik);
+        // JANGAN timpa kunci_unik yang sudah valid dari database
+        if (!r.kunci_unik || !String(r.kunci_unik).trim()) {
+          r.kunci_unik = getNormalizedTripId(r.nama_kapal || r.nama_kapal_ongkir, r.tanggal);
+        }
       }
     });
   }
@@ -421,9 +446,7 @@ async function tarikSemuaData() {
       }
       
       updateStatusBadge("online", "Online", ` (${allPelayaran.length} Kapal)`);
-      if (document.getElementById("countMuatan")) {
-        document.getElementById("countMuatan").textContent = allRincian.length;
-      }
+      if (typeof updateMasterParenggeDatalist === "function") updateMasterParenggeDatalist();
 
       if (typeof renderWartaHariIni === "function") renderWartaHariIni();
       if (typeof renderDashboard === "function") renderDashboard();
@@ -512,9 +535,7 @@ async function cekDataBaruSilent() {
       } catch (_) {}
 
       updateStatusBadge("online", "Online", ` (${allPelayaran.length} Kapal)`);
-      if (document.getElementById("countMuatan")) {
-        document.getElementById("countMuatan").textContent = allRincian.length;
-      }
+      if (typeof updateMasterParenggeDatalist === "function") updateMasterParenggeDatalist();
 
       if (typeof renderWartaHariIni === "function") renderWartaHariIni();
       if (typeof renderDashboard === "function") renderDashboard();
