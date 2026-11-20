@@ -3390,10 +3390,12 @@ body.warta-public-mode .main-wrapper {
   padding: 4px;
 }
 
-.superadmin-details-toggle summary::-webkit-details-marker {
+.superadmin-details-toggle summary::-webkit-details-marker,
+.master-kapal-details-toggle summary::-webkit-details-marker {
   display: none;
 }
-.superadmin-details-toggle summary {
+.superadmin-details-toggle summary,
+.master-kapal-details-toggle summary {
   list-style: none;
 }
 
