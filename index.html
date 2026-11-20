@@ -41,12 +41,12 @@
   <!-- ======================================================== -->
   <!-- MODAL NOTA KONTAN CETAK A6 (js/nota.js)                  -->
   <!-- ======================================================== -->
-  <div class="modal-overlay" id="notaModal"></div>
+  <div class="modal-overlay" id="notaModal" onclick="if(event.target===this) tutupNota()"></div>
 
   <!-- ======================================================== -->
   <!-- MODAL INPUT PELAYARAN BARU (js/kapal.js)                 -->
   <!-- ======================================================== -->
-  <div class="modal-overlay" id="tambahPelayaranModal"></div>
+  <div class="modal-overlay" id="tambahPelayaranModal" onclick="if(event.target===this) tutupModalTambahPelayaran()"></div>
 
   <!-- ======================================================== -->
   <!-- MOBILE BOTTOM NAVIGATION (js/app.js: initNavbar)         -->

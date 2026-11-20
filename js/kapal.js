@@ -174,14 +174,9 @@ function bukaModalTambahPelayaran(defaultTanggal = "") {
   
   const todayStr = new Date().toISOString().split("T")[0];
   const tglVal = defaultTanggal || todayStr;
-  
-  const masterOngkir = typeof getMasterKapalOngkir === "function"
-    ? getMasterKapalOngkir()
-    : ((Array.isArray(MASTER_KAPAL_ONGKIR) && MASTER_KAPAL_ONGKIR.length > 0) ? MASTER_KAPAL_ONGKIR : DEFAULT_MASTER_KAPAL_ONGKIR);
-  const defaultKapal = masterOngkir.length > 0 ? masterOngkir[0] : "KMN AMALIA";
 
   modal.innerHTML = `
-    <div class="modal-content" style="max-width: 480px; padding: 1.5rem;">
+    <div class="modal-content" style="max-width: 480px; padding: 1.4rem;">
       <div class="modal-top-bar" style="margin-bottom: 1.25rem;">
         <span style="font-weight: 800; font-size: 1.05rem; color: var(--text-primary);">➕ Tambah Pelayaran / Nota Baru</span>
         <button type="button" class="btn-close" onclick="tutupModalTambahPelayaran()">✕</button>
@@ -191,12 +186,12 @@ function bukaModalTambahPelayaran(defaultTanggal = "") {
         <div style="display: flex; flex-direction: column; gap: 0.85rem;">
           <div>
             <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Nama Kapal Ongkir *</label>
-            <input type="text" id="inpBaruNamaKapal" list="listMasterOngkir" class="search-input" value="${escapeHtml(defaultKapal)}" required style="width: 100%;" placeholder="Pilih / ketik nama kapal ongkir...">
+            <input type="text" id="inpBaruNamaKapal" list="listMasterOngkir" class="search-input" value="" required style="width: 100%; text-transform: uppercase;" placeholder="Pilih / ketik nama kapal ongkir..." autocomplete="off">
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Tanggal *</label>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Tanggal Pelayaran *</label>
               <input type="date" id="inpBaruTanggal" class="search-input" value="${escapeHtml(tglVal)}" required style="width: 100%;">
             </div>
             <div>
@@ -207,12 +202,12 @@ function bukaModalTambahPelayaran(defaultTanggal = "") {
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Juragan</label>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Juragan / Nakhoda</label>
               <input type="text" id="inpBaruJuragan" class="search-input" placeholder="Nama juragan..." style="width: 100%;">
             </div>
             <div>
               <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Lokasi Muat</label>
-              <input type="text" id="inpBaruLokasi" class="search-input" value="DDL" style="width: 100%;">
+              <input type="text" id="inpBaruLokasi" class="search-input" value="DDL" style="width: 100%;" placeholder="DDL / Puma / Kalmas...">
             </div>
           </div>
 
@@ -229,7 +224,7 @@ function bukaModalTambahPelayaran(defaultTanggal = "") {
 
           <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 0.75rem;">
             <button type="button" class="btn-action" onclick="tutupModalTambahPelayaran()" style="background: #64748b;">Batal</button>
-            <button type="submit" class="btn-action" style="background: var(--ocean);">✓ Simpan & Buka Nota</button>
+            <button type="submit" id="btnSubmitPelayaranBaru" class="btn-action" style="background: var(--ocean);">✓ Simpan & Buka Nota</button>
           </div>
         </div>
       </form>
@@ -238,6 +233,10 @@ function bukaModalTambahPelayaran(defaultTanggal = "") {
 
   updateMasterOngkirDatalist();
   modal.classList.add("active");
+  setTimeout(() => {
+    const inp = document.getElementById("inpBaruNamaKapal");
+    if (inp) inp.focus();
+  }, 100);
 }
 
 function tutupModalTambahPelayaran() {
@@ -245,7 +244,7 @@ function tutupModalTambahPelayaran() {
   if (modal) modal.classList.remove("active");
 }
 
-function handleSimpanPelayaranBaru(e) {
+async function handleSimpanPelayaranBaru(e) {
   if (e && e.preventDefault) e.preventDefault();
   const inpKapal = document.getElementById("inpBaruNamaKapal");
   const inpTgl = document.getElementById("inpBaruTanggal");
@@ -254,30 +253,43 @@ function handleSimpanPelayaranBaru(e) {
   const inpLok = document.getElementById("inpBaruLokasi");
   const inpRes = document.getElementById("inpBaruResi");
   const inpTot = document.getElementById("inpBaruTotalTertulis");
+  const btnSubmit = document.getElementById("btnSubmitPelayaranBaru");
 
   const rawKapal = inpKapal ? inpKapal.value : "";
-  const namaKapal = sanitizeInput(rawKapal).trim();
+  const namaKapal = sanitizeInput(rawKapal).trim().toUpperCase();
   const tanggal = normalizeDateKey(inpTgl ? inpTgl.value : "").trim();
   if (!namaKapal || !tanggal) {
     alert("Harap isi Nama Kapal Ongkir dan Tanggal.");
     return;
   }
 
-  const juragan = sanitizeInput(inpJrg ? inpJrg.value : "").trim();
-  const waktu = sanitizeInput(inpWkt ? inpWkt.value : "14.30").trim();
-  const lokasi = sanitizeInput(inpLok ? inpLok.value : "DDL").trim();
-  const resi = sanitizeInput(inpRes ? inpRes.value : "1").trim();
+  const juragan = sanitizeInput(inpJrg ? inpJrg.value : "").trim() || "-";
+  const waktu = sanitizeInput(inpWkt ? inpWkt.value : "14.30").trim() || "14.30";
+  const lokasi = sanitizeInput(inpLok ? inpLok.value : "DDL").trim() || "DDL";
+  const resi = sanitizeInput(inpRes ? inpRes.value : "1").trim() || "1";
   const tertulis = Math.max(0, Math.floor(Number(inpTot ? inpTot.value : 0) || 0));
 
-  const tripKey = `${namaKapal}_${tanggal}`;
+  const tripKey = getNormalizedTripId(namaKapal, tanggal);
+
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = "Menyimpan...";
+  }
 
   // Cek apakah pelayaran ini sudah ada
   let existing = allPelayaran.find(p => {
     const pK = String(p.kunci_unik || "").trim().toLowerCase();
-    return pK === tripKey.toLowerCase();
+    const pGen = getNormalizedTripId(p.nama_kapal_ongkir || p.nama_kapal, p.tanggal).trim().toLowerCase();
+    return pK === tripKey.toLowerCase() || pGen === tripKey.toLowerCase();
   });
 
-  if (!existing) {
+  if (existing) {
+    existing.juragan = juragan;
+    existing.lokasi_muat = lokasi;
+    existing.waktu_berangkat = waktu;
+    existing.resi = resi;
+    if (tertulis > 0) existing.total_tertulis = tertulis;
+  } else {
     const newShip = {
       timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
       kunci_unik: tripKey,
@@ -299,20 +311,61 @@ function handleSimpanPelayaranBaru(e) {
       resi: resi
     };
     allPelayaran.unshift(newShip);
-    try {
-      localStorage.setItem("CACHE_PELAYARAN", JSON.stringify(allPelayaran));
-    } catch (_) {}
   }
 
+  try {
+    localStorage.setItem("CACHE_PELAYARAN", JSON.stringify(allPelayaran));
+  } catch (_) {}
+
+  // Kirim sinkronisasi pelayaran baru ke Google Spreadsheet secara instan
+  const targetUrl = typeof getActiveWebhookUrl === "function" ? getActiveWebhookUrl() : "";
+  if (targetUrl) {
+    const existingItems = allRincian.filter(r => isSameTripRecord(r, { nama_kapal_ongkir: namaKapal, tanggal: tanggal, kunci_unik: tripKey }));
+    const payload = {
+      auth: typeof APP_SECRET_TOKEN !== "undefined" ? APP_SECRET_TOKEN : "",
+      aksi: "SIMPAN_NOTA",
+      kunci_unik: tripKey,
+      tanggal: tanggal,
+      nama_kapal_ongkir: namaKapal,
+      nama_kapal: namaKapal,
+      juragan: juragan,
+      lokasi_muat: lokasi,
+      waktu_berangkat: waktu,
+      total_tertulis: tertulis,
+      total_terhitung: existing ? (existing.total_terhitung || 0) : 0,
+      total_hitung: existing ? (existing.total_terhitung || 0) : 0,
+      selisih: tertulis > 0 ? (tertulis - (existing ? (existing.total_terhitung || 0) : 0)) : 0,
+      status_selisih: tertulis > 0 ? "SELISIH" : "SESUAI",
+      subtotal_ongkir: existing ? (existing.subtotal_ongkir || 0) : 0,
+      subtotal: existing ? (existing.subtotal_ongkir || 0) : 0,
+      potongan: existing ? (existing.potongan || 0) : 0,
+      total_bersih: existing ? (existing.total_bersih || 0) : 0,
+      resi: resi,
+      items: existingItems
+    };
+
+    fetch(targetUrl, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }).then(r => r.json()).then(res => {
+      if (res && res.status === "sukses") {
+        showSecurityToast("✓ Pelayaran baru tersimpan di Google Sheets!");
+      }
+    }).catch(err => {
+      console.warn("Sinkronisasi pelayaran baru online:", err);
+    });
+  }
+
+  showSecurityToast("✓ Pelayaran berhasil disimpan!");
   tutupModalTambahPelayaran();
 
   if (typeof renderWartaHariIni === "function") renderWartaHariIni(tanggal);
   if (typeof renderDashboard === "function") renderDashboard();
   if (typeof filterData === "function") filterData();
 
-  // Langsung buka modal nota agar user bisa mengisi rincian kapal parengge
+  // Langsung buka modal nota agar pengguna dapat mengisi rincian kapal parengge
   setTimeout(() => {
     bukaNota(tripKey);
-  }, 100);
+  }, 120);
 }
 

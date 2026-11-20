@@ -169,11 +169,12 @@ function renderBlangkoNota() {
     if (!notaItems || notaItems.length === 0) {
       rowsHtml = `
         <tr>
-          <td colspan="4" style="text-align: center; color: var(--danger-text); padding: 8px; font-weight: 600;">
-            ⚠️ Rincian muatan kapal ini belum ada / kosong.<br>
-            <small style="color: var(--text-muted); font-weight: normal;">
-              Klik "+ Tambah Baris Kapal Parengge Manual" di bawah untuk menambahkan.
-            </small>
+          <td colspan="4" style="text-align: center; color: var(--text-primary); padding: 1.15rem 0.5rem;">
+            <div style="font-weight: 700; font-size: 0.86rem; color: var(--text-primary); margin-bottom: 0.25rem;">📦 Rincian muatan kapal ini masih kosong</div>
+            <div style="color: var(--text-muted); font-size: 0.76rem; margin-bottom: 0.75rem;">Tambahkan baris kapal parengge untuk menghitung muatan & ongkir:</div>
+            <button type="button" class="btn-action no-print" onclick="tambahBarisManual()" style="background: var(--ocean); font-size: 0.78rem; padding: 0.45rem 1rem; margin: 0 auto; display: inline-flex; align-items: center; gap: 6px;">
+              <span>➕ Tambah Baris Parengge</span>
+            </button>
           </td>
         </tr>
       `;
