@@ -2627,3 +2627,426 @@ table.items-table tfoot tr {
     color: #000 !important;
   }
 }
+
+/* ============================================================== */
+/* WARTA ONGKIR & LIVE BROADCAST HARIAN (PUBLIC INDEX PAGE)       */
+/* ============================================================== */
+.warta-admin-banner {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  flex-wrap: wrap;
+}
+
+.warta-admin-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.warta-admin-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(56, 136, 204, 0.2);
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.warta-admin-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.warta-admin-sub {
+  font-size: 0.76rem;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+.btn-enter-admin {
+  background: linear-gradient(135deg, var(--ocean) 0%, var(--primary) 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.55rem 1.15rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-enter-admin:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+  background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
+}
+
+.warta-hero-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.35rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+
+.warta-hero-top {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  margin-bottom: 1.25rem;
+}
+
+.warta-hero-logo-box {
+  width: 58px;
+  height: 58px;
+  border-radius: 12px;
+  background: rgba(30, 64, 175, 0.06);
+  border: 1px solid rgba(30, 64, 175, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 4px;
+}
+
+.warta-hero-logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.warta-hero-badge {
+  display: inline-block;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.warta-hero-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.warta-hero-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+  margin-bottom: 0;
+}
+
+.warta-date-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.warta-date-nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.btn-warta-nav {
+  background: #f1f5f9;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.8rem;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-warta-nav:hover {
+  background: #e2e8f0;
+  color: var(--text-primary);
+}
+
+.warta-date-input {
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 0.8rem;
+  background: #fff;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.btn-warta-today {
+  background: rgba(30, 64, 175, 0.08);
+  color: var(--primary);
+  border: 1px solid rgba(30, 64, 175, 0.2);
+  padding: 0.45rem 0.85rem;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-warta-today:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.btn-copy-all-warta {
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 0.5rem 1rem;
+  border-radius: 7px;
+}
+
+.warta-fallback-alert {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 0.85rem 1.15rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #1e3a8a;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.warta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.warta-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.warta-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px -3px rgba(15, 23, 42, 0.08);
+}
+
+.warta-card-header {
+  margin-bottom: 0.85rem;
+}
+
+.warta-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.warta-ship-pill {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 2.5px 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.warta-time-pill {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 2.5px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.warta-ship-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.warta-ship-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.warta-ship-meta b {
+  color: var(--text-secondary);
+}
+
+.warta-pre-box-wrap {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.warta-pre-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px dashed #cbd5e1;
+}
+
+.btn-copy-bubble {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-copy-bubble:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.warta-pre-content {
+  margin: 0;
+  font-family: 'Consolas', 'Menlo', 'Monaco', monospace, sans-serif;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #0f172a;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.warta-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--border);
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.warta-footer-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.warta-total-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.warta-total-val {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.warta-action-group {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.btn-warta-wa {
+  background: #16a34a !important;
+  color: #fff !important;
+  border-color: #15803d !important;
+}
+
+.btn-warta-wa:hover {
+  background: #15803d !important;
+}
+
+@media (max-width: 640px) {
+  .warta-grid {
+    grid-template-columns: 1fr;
+  }
+  .warta-hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .warta-hero-title {
+    font-size: 1.15rem;
+  }
+  .warta-date-control-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .warta-date-nav-buttons {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .btn-copy-all-warta {
+    width: 100%;
+    justify-content: center;
+  }
+  .warta-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .warta-action-group {
+    width: 100%;
+  }
+  .warta-action-group .btn-action {
+    flex: 1;
+    justify-content: center;
+  }
+}

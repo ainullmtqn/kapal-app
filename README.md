@@ -56,7 +56,8 @@ manifes-kapal-app/
 │   └── Code.gs      # Backend Apps Script tersinkronisasi (doGet & doPost Webhook)
 └── js/              # Modul skrip JavaScript aplikasi terstruktur (modular per main bar)
     ├── core.js      # State global, validasi & sanitasi XSS, master kapal, dan sinkronisasi realtime
-    ├── dashboard.js # Main Bar 1: Beranda, 4 kartu KPI, dan grafik tren harian muatan
+    ├── warta.js     # Portal Beranda: Informasi Ongkir Hari Ini (Warta Publik & Salin WhatsApp)
+    ├── dashboard.js # Main Bar 1: Beranda Admin, 4 kartu KPI, dan grafik tren harian muatan
     ├── kapal.js     # Main Bar 2: Pelayaran kapal ongkir, filter lokasi, dan pencarian instan
     ├── muatan.js    # Main Bar 3: Muatan kapal parengge dan agregasi total gabus pemilik
     ├── audit.js     # Main Bar 4: Audit integritas dan deteksi selisih muatan fisik

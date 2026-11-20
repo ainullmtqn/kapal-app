@@ -22,8 +22,11 @@
   <!-- MAIN CONTENT PER TAB BAR (MODULAR JS COMPONENTS)         -->
   <!-- ======================================================== -->
   <main class="main-wrapper">
+    <!-- TAB 0: INFORMASI ONGKIR HARI INI / WARTA PUBLIK (js/warta.js) -->
+    <section id="tabWarta" class="tab-pane no-print"></section>
+
     <!-- TAB 1: BERANDA / DASHBOARD (js/dashboard.js) -->
-    <section id="tabDashboard" class="tab-pane no-print"></section>
+    <section id="tabDashboard" class="tab-pane no-print" style="display: none;"></section>
 
     <!-- TAB 2: KAPAL ONGKIR (js/kapal.js) -->
     <section id="tabKapal" class="tab-pane no-print" style="display: none;"></section>
@@ -53,6 +56,7 @@
   <!-- ======================================================== -->
   <script src="chart.min.js"></script>
   <script src="js/core.js"></script>
+  <script src="js/warta.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/kapal.js"></script>
   <script src="js/muatan.js"></script>

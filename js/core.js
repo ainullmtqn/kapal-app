@@ -9,7 +9,7 @@ var allRincian = [];
 var filteredPelayaran = [];
 var currentFilterPill = 'SEMUA';
 var currentDashChip = 'SEMUA';
-var currentTab = 'dashboard'; // 'dashboard' | 'kapal' | 'muatan' | 'audit' | 'setting'
+var currentTab = 'warta'; // 'warta' | 'dashboard' | 'kapal' | 'muatan' | 'audit' | 'setting'
 var activeKapal = null;
 var notaItems = [];
 var potonganNominal = 0;
@@ -425,6 +425,7 @@ async function tarikSemuaData() {
         document.getElementById("countMuatan").textContent = allRincian.length;
       }
 
+      if (typeof renderWartaHariIni === "function") renderWartaHariIni();
       if (typeof renderDashboard === "function") renderDashboard();
       if (typeof filterData === "function") filterData();
       if (typeof renderSemuaMuatan === "function") renderSemuaMuatan();
@@ -515,6 +516,7 @@ async function cekDataBaruSilent() {
         document.getElementById("countMuatan").textContent = allRincian.length;
       }
 
+      if (typeof renderWartaHariIni === "function") renderWartaHariIni();
       if (typeof renderDashboard === "function") renderDashboard();
       if (currentTab === 'kapal' && typeof filterData === "function") filterData();
       if (currentTab === 'muatan' && typeof renderSemuaMuatan === "function") renderSemuaMuatan();
