@@ -460,12 +460,14 @@ async function tarikSemuaData() {
       if (Array.isArray(data.master_kapal_ongkir) && data.master_kapal_ongkir.length > 0) {
         MASTER_KAPAL_ONGKIR = data.master_kapal_ongkir;
         try { localStorage.setItem("CACHE_MASTER_ONGKIR", JSON.stringify(MASTER_KAPAL_ONGKIR)); } catch (_) {}
+        if (typeof updateMasterOngkirDatalist === "function") updateMasterOngkirDatalist();
       }
       if (Array.isArray(data.master_kapal_parengge) && data.master_kapal_parengge.length > 0) {
         MASTER_KAPAL_PARENGGE = data.master_kapal_parengge;
         try { localStorage.setItem("CACHE_MASTER_PARENGGE", JSON.stringify(MASTER_KAPAL_PARENGGE)); } catch (_) {}
         if (typeof updateMasterParenggeDatalist === "function") updateMasterParenggeDatalist();
       }
+      if (typeof renderMasterKapalList === "function") renderMasterKapalList();
       
       normalizeDatasetTripIds(allPelayaran, allRincian);
       allPelayaran.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
@@ -541,12 +543,14 @@ async function cekDataBaruSilent() {
       if (Array.isArray(data.master_kapal_ongkir) && data.master_kapal_ongkir.length > 0) {
         MASTER_KAPAL_ONGKIR = data.master_kapal_ongkir;
         try { localStorage.setItem("CACHE_MASTER_ONGKIR", JSON.stringify(MASTER_KAPAL_ONGKIR)); } catch (_) {}
+        if (typeof updateMasterOngkirDatalist === "function") updateMasterOngkirDatalist();
       }
       if (Array.isArray(data.master_kapal_parengge) && data.master_kapal_parengge.length > 0) {
         MASTER_KAPAL_PARENGGE = data.master_kapal_parengge;
         try { localStorage.setItem("CACHE_MASTER_PARENGGE", JSON.stringify(MASTER_KAPAL_PARENGGE)); } catch (_) {}
         if (typeof updateMasterParenggeDatalist === "function") updateMasterParenggeDatalist();
       }
+      if (typeof renderMasterKapalList === "function") renderMasterKapalList();
 
       normalizeDatasetTripIds(dataBaruPelayaran, dataBaruRincian);
       const newSignature = computeDataSignature(dataBaruPelayaran, dataBaruRincian);

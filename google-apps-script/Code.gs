@@ -185,7 +185,12 @@ function doPost(e) {
       return handleSimpanNota(sheets, payload);
     }
 
-    // 5. Default: Simpan Data Manifes dari Bot (BARU / REVISI_PENUH / TAMBAHAN_PARSIAL)
+    // 5. Aksi UPDATE_MASTER_KAPAL (Web App: Simpan / Perbarui Master Kapal Ongkir & Parengge)
+    if (payload.aksi === 'UPDATE_MASTER_KAPAL') {
+      return handleUpdateMasterKapal(sheets, payload);
+    }
+
+    // 6. Default: Simpan Data Manifes dari Bot (BARU / REVISI_PENUH / TAMBAHAN_PARSIAL)
     return handleSaveManifest(sheets, payload);
 
   } catch (err) {
@@ -297,6 +302,77 @@ function handleSaveManifest(sheets, data) {
     total_muatan: totalTerhitung,
     status_selisih: statusSelisih
   });
+}
+
+/**
+ * Menyimpan / Perbarui seluruh master kapal ongkir & parengge ke tab Database_Kapal
+ */
+function handleUpdateMasterKapal(sheets, payload) {
+  const sheetMaster = sheets.sheetMaster;
+  if (!sheetMaster) {
+    return jsonResponse({ status: 'error', pesan: 'Tab ' + SHEET_MASTER + ' tidak ditemukan di Spreadsheet!' });
+  }
+
+  const listOngkir = Array.isArray(payload.master_kapal_ongkir) ? payload.master_kapal_ongkir : [];
+  const listParengge = Array.isArray(payload.master_kapal_parengge) ? payload.master_kapal_parengge : [];
+
+  // Bersihkan data lama mulai baris 2 ke bawah
+  const lastRow = sheetMaster.getLastRow();
+  if (lastRow > 1) {
+    sheetMaster.getRange(2, 1, lastRow - 1, 5).clearContent();
+  }
+
+  const maxLen = Math.max(listOngkir.length, listParengge.length);
+  if (maxLen > 0) {
+    const rows = [];
+    for (let i = 0; i < maxLen; i++) {
+      const noOngkir = i < listOngkir.length ? (i + 1) : '';
+      const namaOngkir = i < listOngkir.length ? String(listOngkir[i]).trim().toUpperCase() : '';
+      const noParengge = i < listParengge.length ? (i + 1) : '';
+      const namaParengge = i < listParengge.length ? String(listParengge[i]).trim().toUpperCase() : '';
+
+      rows.push([noOngkir, namaOngkir, '', noParengge, namaParengge]);
+    }
+
+    sheetMaster.getRange(2, 1, rows.length, 5).setValues(rows);
+  }
+
+  return jsonResponse({
+    status: 'sukses',
+    pesan: 'Daftar master kapal berhasil diperbarui di tab ' + SHEET_MASTER,
+    total_ongkir: listOngkir.length,
+    total_parengge: listParengge.length,
+    master_kapal_ongkir: listOngkir,
+    master_kapal_parengge: listParengge
+  });
+}
+
+/**
+ * Membaca seluruh data master kapal ongkir dan parengge secara dinamis dari Database_Kapal
+ */
+function readMasterKapal(sheetMaster) {
+  const masterOngkir = [];
+  const masterParengge = [];
+
+  if (sheetMaster && sheetMaster.getLastRow() > 1) {
+    const lastRow = sheetMaster.getLastRow();
+    const data = sheetMaster.getRange(2, 1, lastRow - 1, 5).getValues();
+    data.forEach(function(row) {
+      const ongkir = row[1] ? String(row[1]).trim().toUpperCase() : '';
+      if (ongkir && masterOngkir.indexOf(ongkir) === -1) {
+        masterOngkir.push(ongkir);
+      }
+      const parengge = row[4] ? String(row[4]).trim().toUpperCase() : '';
+      if (parengge && masterParengge.indexOf(parengge) === -1) {
+        masterParengge.push(parengge);
+      }
+    });
+  }
+
+  if (masterOngkir.length === 0) masterOngkir.push.apply(masterOngkir, DEFAULT_MASTER_ONGKIR);
+  if (masterParengge.length === 0) masterParengge.push.apply(masterParengge, DEFAULT_MASTER_PARENGGE);
+
+  return { masterOngkir: masterOngkir, masterParengge: masterParengge };
 }
 
 /**
@@ -633,31 +709,12 @@ function doGet(e) {
 
     // 0. GET MASTER DATASET DARI Database_Kapal (Query BOT)
     if (aksi === 'GET_MASTER_DATA') {
-      const masterOngkir = [];
-      const masterParengge = [];
-
-      if (sheetMaster && sheetMaster.getLastRow() > 1) {
-        const dataOngkir = sheetMaster.getRange(2, 2, Math.min(sheetMaster.getLastRow() - 1, 37), 1).getValues();
-        dataOngkir.forEach(function(row) {
-          const val = row[0] ? row[0].toString().trim() : '';
-          if (val && masterOngkir.indexOf(val) === -1) masterOngkir.push(val);
-        });
-
-        const dataParengge = sheetMaster.getRange(2, 5, Math.min(sheetMaster.getLastRow() - 1, 34), 1).getValues();
-        dataParengge.forEach(function(row) {
-          const val = row[0] ? row[0].toString().trim() : '';
-          if (val && masterParengge.indexOf(val) === -1) masterParengge.push(val);
-        });
-      }
-
-      if (masterParengge.length === 0) masterParengge.push.apply(masterParengge, DEFAULT_MASTER_PARENGGE);
-      if (masterOngkir.length === 0) masterOngkir.push.apply(masterOngkir, DEFAULT_MASTER_ONGKIR);
-
+      const masters = readMasterKapal(sheetMaster);
       return jsonResponse({
         status: 'sukses',
         database: SPREADSHEET_NAME,
-        master_kapal_ongkir: masterOngkir,
-        master_kapal_parengge: masterParengge
+        master_kapal_ongkir: masters.masterOngkir,
+        master_kapal_parengge: masters.masterParengge
       });
     }
 
@@ -862,32 +919,15 @@ function doGet(e) {
     }
 
     // Master Kapal dari Database_Kapal
-    const masterOngkir = [];
-    const masterParengge = [];
-    if (sheetMaster && sheetMaster.getLastRow() > 1) {
-      const dataOngkir = sheetMaster.getRange(2, 2, Math.min(sheetMaster.getLastRow() - 1, 37), 1).getValues();
-      dataOngkir.forEach(function(row) {
-        const val = row[0] ? row[0].toString().trim() : '';
-        if (val && masterOngkir.indexOf(val) === -1) masterOngkir.push(val);
-      });
-
-      const dataParengge = sheetMaster.getRange(2, 5, Math.min(sheetMaster.getLastRow() - 1, 34), 1).getValues();
-      dataParengge.forEach(function(row) {
-        const val = row[0] ? row[0].toString().trim() : '';
-        if (val && masterParengge.indexOf(val) === -1) masterParengge.push(val);
-      });
-    }
-
-    if (masterParengge.length === 0) masterParengge.push.apply(masterParengge, DEFAULT_MASTER_PARENGGE);
-    if (masterOngkir.length === 0) masterOngkir.push.apply(masterOngkir, DEFAULT_MASTER_ONGKIR);
+    const masters = readMasterKapal(sheetMaster);
 
     return jsonResponse({
       status: 'sukses',
       database: SPREADSHEET_NAME,
       pelayaran: pelayaranList,
       rincian: rincianList,
-      master_kapal_ongkir: masterOngkir,
-      master_kapal_parengge: masterParengge,
+      master_kapal_ongkir: masters.masterOngkir,
+      master_kapal_parengge: masters.masterParengge,
       waktu_baca: getActiveTimestampWIB()
     });
 

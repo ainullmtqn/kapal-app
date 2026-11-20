@@ -222,6 +222,7 @@ function switchTab(tabName, el) {
     if (typeof renderSemuaMuatan === "function") renderSemuaMuatan();
   } else if (tabName === 'setting') {
     if (tabSetting) tabSetting.style.display = "block";
+    if (typeof renderMasterKapalList === "function") renderMasterKapalList();
   }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
