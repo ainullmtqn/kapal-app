@@ -13,12 +13,9 @@ function initWartaView() {
       <!-- HERO BANNER INFORMASI ONGKIR HARI INI -->
       <div class="warta-hero-card">
         <div class="warta-hero-top">
-          <div class="warta-hero-logo-box" ondblclick="switchTab('dashboard')" title="PARENGGEKITA">
-            <img src="logo.png" alt="Logo PARENGGEKITA" class="warta-hero-logo">
-          </div>
           <div>
             <div class="warta-hero-badge">📢 LIVE DISPATCH & MANIFES HARIAN</div>
-            <h1 class="warta-hero-title">Informasi Ongkir Hari Ini</h1>
+            <h1 class="warta-hero-title" ondblclick="switchTab('dashboard')" title="Informasi Ongkir Hari Ini">Informasi Ongkir Hari Ini</h1>
             <p class="warta-hero-desc">Format resmi warta kedatangan kapal ongkir & rekapitulasi muatan ikan kapal parengge</p>
           </div>
         </div>
@@ -26,14 +23,14 @@ function initWartaView() {
         <!-- NAVIGASI TANGGAL WARTA (HANYA SEBELUMNYA, TANGGAL, DAN BERIKUTNYA) -->
         <div class="warta-date-control-bar">
           <div class="warta-date-nav-buttons">
-            <button type="button" class="btn-warta-nav" onclick="geserTanggalWarta(-1)" title="Hari Sebelumnya">
-              ◀ Sebelumnya
+            <button type="button" class="btn-warta-nav btn-warta-prev" onclick="geserTanggalWarta(-1)" title="Hari Sebelumnya" aria-label="Hari Sebelumnya">
+              <span class="nav-arrow">◀</span><span class="nav-text"> Sebelumnya</span>
             </button>
             <div class="warta-input-date-wrap">
               <input type="date" id="wartaDateInput" class="warta-date-input" onchange="pilihTanggalWarta(this.value)">
             </div>
-            <button type="button" class="btn-warta-nav" onclick="geserTanggalWarta(1)" title="Hari Berikutnya">
-              Berikutnya ▶
+            <button type="button" class="btn-warta-nav btn-warta-next" onclick="geserTanggalWarta(1)" title="Hari Berikutnya" aria-label="Hari Berikutnya">
+              <span class="nav-text">Berikutnya </span><span class="nav-arrow">▶</span>
             </button>
           </div>
 
