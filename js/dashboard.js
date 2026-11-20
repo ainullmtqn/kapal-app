@@ -8,17 +8,6 @@ function initDashboardView() {
   if (!container || container.innerHTML.trim() !== "") return;
 
   container.innerHTML = `
-      <!-- Banner Identitas Beranda Selaras -->
-      <div class="dashboard-hero-banner">
-        <div class="dashboard-hero-logo-wrap">
-          <img src="logo.png" alt="Logo PARENGGEKITA" class="dashboard-hero-logo">
-        </div>
-        <div class="dashboard-hero-text">
-          <div class="dashboard-hero-title">PARENGGE<span class="brand-title-accent">KITA</span><span class="brand-title-dot">.</span></div>
-          <div class="dashboard-hero-sub">Sistem Digital Manifes Kedatangan Kapal & Nota Ongkir Muatan</div>
-        </div>
-      </div>
-
       <!-- 4 KPI Metrics Cards -->
       <div class="kpi-grid">
         <div class="kpi-card" onclick="switchTab('kapal')" style="cursor: pointer;" title="Buka Database Pelayaran Kapal">
