@@ -52,13 +52,15 @@ manifes-kapal-app/
 ├── README.md        # Dokumentasi resmi proyek
 ├── assets/          # Arsip aset mentah dan berkas pendukung
 │   └── LOGO.jpg     # Master file citra resolusi tinggi
+├── google-apps-script/
+│   └── Code.gs      # Backend Apps Script tersinkronisasi (doGet & doPost Webhook)
 └── js/              # Modul skrip JavaScript aplikasi terstruktur (modular per main bar)
-    ├── core.js      # State global, validasi & sanitasi XSS, formatter, dan sinkronisasi realtime
+    ├── core.js      # State global, validasi & sanitasi XSS, master kapal, dan sinkronisasi realtime
     ├── dashboard.js # Main Bar 1: Beranda, 4 kartu KPI, dan grafik tren harian muatan
     ├── kapal.js     # Main Bar 2: Pelayaran kapal ongkir, filter lokasi, dan pencarian instan
     ├── muatan.js    # Main Bar 3: Muatan kapal parengge dan agregasi total gabus pemilik
     ├── audit.js     # Main Bar 4: Audit integritas dan deteksi selisih muatan fisik
-    ├── nota.js      # Modal nota kontan presisi cetak A6, editor baris, dan autosave
+    ├── nota.js      # Modal nota kontan presisi cetak A6, autocomplete master parengge, autosave
     ├── setting.js   # Main Bar 5: Pengaturan webhook Google Apps Script dan cadangan JSON
     └── app.js       # Orkestrator utama, bootstrap inisialisasi aplikasi, dan navigasi switchTab
 ```

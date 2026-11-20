@@ -58,10 +58,10 @@ function bukaNota(kunciUnik) {
   const muatanKapal = allRincian.filter(r => isSameTripRecord(r, activeKapal));
 
   notaItems = muatanKapal.map(m => {
-    let ongkirTersimpan = validateOngkir(m.ongkir);
-    let gabus = Math.max(0, Math.floor(Number(m.jumlah) || 0));
+    let ongkirTersimpan = validateOngkir(m.ongkir_rp !== undefined ? m.ongkir_rp : m.ongkir);
+    let gabus = Math.max(0, Math.floor(Number(m.jumlah_gabus !== undefined ? m.jumlah_gabus : m.jumlah) || 0));
     return {
-      nama: sanitizeInput(m.nama_pemilik || "Tanpa Nama"),
+      nama: sanitizeInput(m.nama_kapal_parengge || m.nama_pemilik || "Tanpa Nama"),
       gabus: gabus,
       ongkir: ongkirTersimpan
     };
@@ -104,7 +104,8 @@ function hapusBaris(idx) {
 
     allRincian = allRincian.filter(r => {
       if (isSameTripRecord(r, activeKapal)) {
-        return (r.nama_pemilik || "").trim().toLowerCase() !== namaHapus;
+        const itemNama = (r.nama_kapal_parengge || r.nama_pemilik || "").trim().toLowerCase();
+        return itemNama !== namaHapus;
       }
       return true;
     });
@@ -165,7 +166,7 @@ function renderBlangkoNota() {
             <td style="padding-left: 5px;">
               <span class="print-text text-left" id="txtPrintNama_${idx}">${safeNama}</span>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
-                <input type="text" class="inp-nama no-print" value="${safeNama}" oninput="updateNamaItem(${idx}, this.value)" style="flex: 1;">
+                <input type="text" class="inp-nama no-print" list="listMasterParengge" value="${safeNama}" oninput="updateNamaItem(${idx}, this.value)" style="flex: 1;" placeholder="Pilih / ketik nama kapal parengge...">
                 <button type="button" class="btn-del-item no-print" onclick="hapusBaris(${idx})" title="Hapus Baris">🗑️</button>
               </div>
             </td>
@@ -187,7 +188,15 @@ function renderBlangkoNota() {
       notaItems.forEach(i => totalGabusFisik += Math.max(0, Math.floor(Number(i.gabus) || 0)));
     }
 
+    const parenggeOptionsHtml = (Array.isArray(MASTER_KAPAL_PARENGGE) ? MASTER_KAPAL_PARENGGE : []).map(p => 
+      `<option value="${escapeHtml(p)}">`
+    ).join("");
+
     printArea.innerHTML = `
+      <datalist id="listMasterParengge">
+        ${parenggeOptionsHtml}
+      </datalist>
+
       <div class="${sheetClass}">
         <!-- WATERMARK LOGO RESMI DI BELAKANG NOTA -->
         <div class="nota-watermark" aria-hidden="true">
@@ -210,7 +219,7 @@ function renderBlangkoNota() {
         <tr>
           <td class="lbl">Kapal Ongkir</td>
           <td class="col">:</td>
-          <td class="val">${escapeHtml(activeKapal.nama_kapal)}</td>
+          <td class="val">${escapeHtml(activeKapal.nama_kapal_ongkir || activeKapal.nama_kapal)}</td>
         </tr>
         <tr>
           <td class="lbl">Juragan</td>
@@ -414,27 +423,43 @@ async function eksekusiSimpanOtomatis() {
   const resiVal = document.getElementById("inpResi") ? sanitizeInput(document.getElementById("inpResi").value) : "1";
 
   const safeTanggal = validateDateFormat(activeKapal.tanggal) ? normalizeDateKey(activeKapal.tanggal) : sanitizeInput(activeKapal.tanggal);
-  const safeNamaKapal = sanitizeInput(activeKapal.nama_kapal);
+  const safeNamaKapal = sanitizeInput(activeKapal.nama_kapal_ongkir || activeKapal.nama_kapal);
 
   const tripKey = getNormalizedTripId(safeNamaKapal, safeTanggal, activeKapal.kunci_unik);
   activeKapal.kunci_unik = tripKey;
   activeKapal.tanggal = safeTanggal;
   activeKapal.nama_kapal = safeNamaKapal;
+  activeKapal.nama_kapal_ongkir = safeNamaKapal;
+
+  let totalGabusNota = 0;
+  notaItems.forEach(i => totalGabusNota += Math.max(0, Math.floor(Number(i.gabus) || 0)));
+
+  const safeTertulis = Number(activeKapal.total_tertulis) || 0;
+  const safeTerhitung = totalGabusNota;
+  const safeSelisih = safeTertulis > 0 ? (safeTertulis - safeTerhitung) : 0;
+  const safeStatus = safeTertulis > 0 ? (safeSelisih === 0 ? "SESUAI" : "SELISIH") : sanitizeInput(activeKapal.status_selisih || "SESUAI");
+
+  activeKapal.total_terhitung = safeTerhitung;
+  activeKapal.total_hitung = safeTerhitung;
+  activeKapal.selisih = safeSelisih;
+  activeKapal.status_selisih = safeStatus;
 
   const formattedItems = notaItems.map(item => {
     const cleanNama = sanitizeInput(item.nama || "Tanpa Nama");
     const cleanGabus = Math.max(0, Math.floor(Number(item.gabus) || 0));
     const cleanOngkir = validateOngkir(item.ongkir);
     return {
-      nama: cleanNama,
-      nama_pemilik: cleanNama,
-      gabus: cleanGabus,
-      jumlah: cleanGabus,
-      satuan: "Gabus",
-      ongkir: cleanOngkir,
       kunci_unik: tripKey,
       tanggal: safeTanggal,
-      nama_kapal: safeNamaKapal
+      nama_kapal_ongkir: safeNamaKapal,
+      nama_kapal: safeNamaKapal,
+      nama_kapal_parengge: cleanNama,
+      nama_pemilik: cleanNama,
+      jumlah_gabus: cleanGabus,
+      jumlah: cleanGabus,
+      satuan: "Gabus",
+      ongkir_rp: cleanOngkir,
+      ongkir: cleanOngkir
     };
   });
 
@@ -442,16 +467,21 @@ async function eksekusiSimpanOtomatis() {
     aksi: "SIMPAN_NOTA",
     kunci_unik: tripKey,
     tanggal: safeTanggal,
+    nama_kapal_ongkir: safeNamaKapal,
     nama_kapal: safeNamaKapal,
     juragan: sanitizeInput(activeKapal.juragan || ""),
     lokasi_muat: sanitizeInput(activeKapal.lokasi_muat || "DDL"),
-    total_hitung: Math.max(0, Math.floor(Number(activeKapal.total_hitung) || 0)),
-    status_selisih: sanitizeInput(activeKapal.status_selisih || "SESUAI"),
-    resi: resiVal,
-    subtotal: sub,
+    waktu_berangkat: sanitizeInput(activeKapal.waktu_berangkat || ""),
+    total_tertulis: safeTertulis,
+    total_terhitung: safeTerhitung,
+    total_hitung: safeTerhitung,
+    selisih: safeSelisih,
+    status_selisih: safeStatus,
     subtotal_ongkir: sub,
+    subtotal: sub,
     potongan: safePotongan,
     total_bersih: bersih,
+    resi: resiVal,
     items: formattedItems
   };
 
@@ -475,7 +505,8 @@ async function eksekusiSimpanOtomatis() {
 
     allRincian = allRincian.filter(r => {
       if (isSameTripRecord(r, activeKapal)) {
-        return notaItems.some(ni => sanitizeInput(ni.nama || "").toLowerCase() === sanitizeInput(r.nama_pemilik || "").toLowerCase());
+        const itemNama = sanitizeInput(r.nama_kapal_parengge || r.nama_pemilik || "").toLowerCase();
+        return notaItems.some(ni => sanitizeInput(ni.nama || "").toLowerCase() === itemNama);
       }
       return true;
     });
@@ -485,23 +516,34 @@ async function eksekusiSimpanOtomatis() {
       const cleanGabus = Math.max(0, Math.floor(Number(nItem.gabus) || 0));
       const cleanOngkir = validateOngkir(nItem.ongkir);
       let found = allRincian.find(r => 
-        isSameTripRecord(r, activeKapal) && sanitizeInput(r.nama_pemilik || "").toLowerCase() === cleanNama.toLowerCase()
+        isSameTripRecord(r, activeKapal) && 
+        sanitizeInput(r.nama_kapal_parengge || r.nama_pemilik || "").toLowerCase() === cleanNama.toLowerCase()
       );
       if (found) {
         found.ongkir = cleanOngkir;
+        found.ongkir_rp = cleanOngkir;
         found.jumlah = cleanGabus;
+        found.jumlah_gabus = cleanGabus;
         found.kunci_unik = tripKey;
         found.tanggal = safeTanggal;
         found.nama_kapal = safeNamaKapal;
+        found.nama_kapal_ongkir = safeNamaKapal;
+        found.nama_pemilik = cleanNama;
+        found.nama_kapal_parengge = cleanNama;
+        found.satuan = "Gabus";
       } else {
         allRincian.push({
           kunci_unik: tripKey,
           tanggal: safeTanggal,
           nama_kapal: safeNamaKapal,
+          nama_kapal_ongkir: safeNamaKapal,
           nama_pemilik: cleanNama,
+          nama_kapal_parengge: cleanNama,
           jumlah: cleanGabus,
+          jumlah_gabus: cleanGabus,
           satuan: "Gabus",
-          ongkir: cleanOngkir
+          ongkir: cleanOngkir,
+          ongkir_rp: cleanOngkir
         });
       }
     });

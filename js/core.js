@@ -26,6 +26,56 @@ var autoSyncTimer = null;         // Timer Polling Latar Belakang
 var isSilentChecking = false;     // Proteksi Request Latar Belakang Simultan
 
 // ==========================================
+// MASTER DATA KAPAL (DATABASE_KAPAL SPREADSHEET)
+// ==========================================
+var DEFAULT_MASTER_KAPAL_ONGKIR = [
+  "KMN BINTANG SOREANG", "KMN CAHAYA BARU", "KMN TUNAS HARAPAN", "KMN BARI BARIA",
+  "KMN BINTANG BKC", "KMN AISYAH 02", "KMN ALIKA JAYA", "KMN AMALIA",
+  "KMN MUARA BAHARI", "KMN BINTANG AL KHAFI", "KMN CAHAYA SALWA", "KMN PUTRI TUNGGAL",
+  "KMN BINTANG MUTIARA", "KMN ODONG ODONG", "KMN NUR KHALISTA", "KMN SINAR FAUZIA",
+  "KMN BINTANG DUA PUTRI", "KMN CAHAYA NUR AISYAH", "KMN BINTANG AJT", "KMN MANYIGARRI",
+  "KMN FAHRY JAYA", "KMN BINTANG NADITA", "KMN ALIZA JAYA", "KMN FAIZ JAYA",
+  "KMN BINTANG CN", "KMN CAHAYA YUNNA", "KMN BINTANG CAHAYA YUNNA", "KMN BINTANG DPS",
+  "KMN IRFAN JAYA BBL", "KMN BIRU BIRU", "KMN CAHAYA BULAN", "KMN JABAL NUR",
+  "KMN ALZAKI", "KMN IQBAL JAYA", "KMN BINTANG MADINA", "KMN NUR HIKMA 02",
+  "KMN SABARI UTAMA"
+];
+
+var DEFAULT_MASTER_KAPAL_PARENGGE = [
+  "BTG 01", "ALAM SURGA", "ALHAMIDI 01", "ALHAMIDI 02",
+  "ANWAR SH", "BARI BIRU", "BARI MUDA", "BINTANG 33",
+  "BINTANG 88", "BINTANG ALAM", "BINTANG HARAPAN", "BINTANG KEJORA 01",
+  "BINTANG KEJORA 02", "BINTANG KEJORA 55", "BINTANG MUSAFIR 01", "BINTANG RAJA CF 04",
+  "BULU JAYA", "BUNGA JAYA", "CAHAYA BINTANG", "CB 06",
+  "CB 10", "CHOKI COKI", "CORA CORA", "DENSAR",
+  "DEWA BATARA 01", "DUA PUTRA", "GARUDA CITY", "JUKU JUKU",
+  "KEJORA GHIFARI", "KIBAR", "TINGGI MONCONG", "SUMBER JAYA",
+  "SAMPOERNA", "TABBING TABBING"
+];
+
+var MASTER_KAPAL_ONGKIR = (function() {
+  try {
+    const c = localStorage.getItem("CACHE_MASTER_ONGKIR");
+    if (c) {
+      const arr = JSON.parse(c);
+      if (Array.isArray(arr) && arr.length > 0) return arr;
+    }
+  } catch (_) {}
+  return [...DEFAULT_MASTER_KAPAL_ONGKIR];
+})();
+
+var MASTER_KAPAL_PARENGGE = (function() {
+  try {
+    const c = localStorage.getItem("CACHE_MASTER_PARENGGE");
+    if (c) {
+      const arr = JSON.parse(c);
+      if (Array.isArray(arr) && arr.length > 0) return arr;
+    }
+  } catch (_) {}
+  return [...DEFAULT_MASTER_KAPAL_PARENGGE];
+})();
+
+// ==========================================
 // SANITASI INPUT ANTI-XSS & SECURITY NOTIFICATIONS
 // ==========================================
 
@@ -228,8 +278,8 @@ function getNormalizedTripId(namaKapal, tanggal, fallbackKunci = "") {
 function isSameTripRecord(r, kapal) {
   if (!r || !kapal) return false;
 
-  const rKapal = (r.nama_kapal || "").trim().toLowerCase();
-  const kKapal = (kapal.nama_kapal || "").trim().toLowerCase();
+  const rKapal = (r.nama_kapal_ongkir || r.nama_kapal || "").trim().toLowerCase();
+  const kKapal = (kapal.nama_kapal_ongkir || kapal.nama_kapal || "").trim().toLowerCase();
 
   if (rKapal && kKapal && rKapal === kKapal) {
     const rDate = normalizeDateKey(r.tanggal);
@@ -249,8 +299,8 @@ function isSameTripRecord(r, kapal) {
     }
   }
 
-  const rTripId = getNormalizedTripId(r.nama_kapal, r.tanggal, r.kunci_unik).trim().toLowerCase();
-  const kTripId = getNormalizedTripId(kapal.nama_kapal, kapal.tanggal, kapal.kunci_unik).trim().toLowerCase();
+  const rTripId = getNormalizedTripId(rKapal, r.tanggal, r.kunci_unik).trim().toLowerCase();
+  const kTripId = getNormalizedTripId(kKapal, kapal.tanggal, kapal.kunci_unik).trim().toLowerCase();
   if (rTripId && kTripId && rTripId === kTripId) {
     return true;
   }
@@ -262,14 +312,28 @@ function normalizeDatasetTripIds(pelayaranList, rincianList) {
   if (Array.isArray(pelayaranList)) {
     pelayaranList.forEach(p => {
       if (p) {
-        p.kunci_unik = getNormalizedTripId(p.nama_kapal, p.tanggal, p.kunci_unik);
+        // Sinkronisasi alias nama kolom baru & lama
+        if (!p.nama_kapal && p.nama_kapal_ongkir) p.nama_kapal = p.nama_kapal_ongkir;
+        if (!p.nama_kapal_ongkir && p.nama_kapal) p.nama_kapal_ongkir = p.nama_kapal;
+        if (p.total_terhitung !== undefined && p.total_hitung === undefined) p.total_hitung = p.total_terhitung;
+        if (p.total_hitung !== undefined && p.total_terhitung === undefined) p.total_terhitung = p.total_hitung;
+        p.kunci_unik = getNormalizedTripId(p.nama_kapal || p.nama_kapal_ongkir, p.tanggal, p.kunci_unik);
       }
     });
   }
   if (Array.isArray(rincianList)) {
     rincianList.forEach(r => {
       if (r) {
-        r.kunci_unik = getNormalizedTripId(r.nama_kapal, r.tanggal, r.kunci_unik);
+        // Sinkronisasi alias nama kolom baru & lama
+        if (!r.nama_kapal && r.nama_kapal_ongkir) r.nama_kapal = r.nama_kapal_ongkir;
+        if (!r.nama_kapal_ongkir && r.nama_kapal) r.nama_kapal_ongkir = r.nama_kapal;
+        if (!r.nama_pemilik && r.nama_kapal_parengge) r.nama_pemilik = r.nama_kapal_parengge;
+        if (!r.nama_kapal_parengge && r.nama_pemilik) r.nama_kapal_parengge = r.nama_pemilik;
+        if (r.jumlah_gabus !== undefined && r.jumlah === undefined) r.jumlah = r.jumlah_gabus;
+        if (r.jumlah !== undefined && r.jumlah_gabus === undefined) r.jumlah_gabus = r.jumlah;
+        if (r.ongkir_rp !== undefined && r.ongkir === undefined) r.ongkir = r.ongkir_rp;
+        if (r.ongkir !== undefined && r.ongkir_rp === undefined) r.ongkir_rp = r.ongkir;
+        r.kunci_unik = getNormalizedTripId(r.nama_kapal || r.nama_kapal_ongkir, r.tanggal, r.kunci_unik);
       }
     });
   }
@@ -327,6 +391,15 @@ async function tarikSemuaData() {
     if (data.status === "sukses") {
       allPelayaran = data.pelayaran || [];
       allRincian = data.rincian || [];
+
+      if (Array.isArray(data.master_kapal_ongkir) && data.master_kapal_ongkir.length > 0) {
+        MASTER_KAPAL_ONGKIR = data.master_kapal_ongkir;
+        try { localStorage.setItem("CACHE_MASTER_ONGKIR", JSON.stringify(MASTER_KAPAL_ONGKIR)); } catch (_) {}
+      }
+      if (Array.isArray(data.master_kapal_parengge) && data.master_kapal_parengge.length > 0) {
+        MASTER_KAPAL_PARENGGE = data.master_kapal_parengge;
+        try { localStorage.setItem("CACHE_MASTER_PARENGGE", JSON.stringify(MASTER_KAPAL_PARENGGE)); } catch (_) {}
+      }
       
       normalizeDatasetTripIds(allPelayaran, allRincian);
       allPelayaran.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
@@ -372,11 +445,11 @@ function computeDataSignature(pelayaran, rincian) {
   if (!Array.isArray(pelayaran) && !Array.isArray(rincian)) return "";
 
   const pList = (pelayaran || []).map(p => 
-    `${p.kunci_unik || ''}_${p.tanggal || ''}_${p.nama_kapal || ''}_${p.juragan || ''}_${p.lokasi_muat || ''}_${p.total_hitung || 0}_${p.status_selisih || ''}_${p.resi || ''}_${p.subtotal_ongkir || 0}_${p.potongan || 0}_${p.total_bersih || 0}`
+    `${p.kunci_unik || ''}_${p.tanggal || ''}_${p.nama_kapal_ongkir || p.nama_kapal || ''}_${p.juragan || ''}_${p.lokasi_muat || ''}_${p.waktu_berangkat || ''}_${p.total_tertulis || 0}_${p.total_terhitung || p.total_hitung || 0}_${p.selisih || 0}_${p.status_selisih || ''}_${p.resi || ''}_${p.subtotal_ongkir || 0}_${p.potongan || 0}_${p.total_bersih || 0}`
   ).join("|");
 
   const rList = (rincian || []).map(r => 
-    `${r.kunci_unik || ''}_${r.nama_pemilik || ''}_${r.jumlah || 0}_${r.ongkir || 0}`
+    `${r.kunci_unik || ''}_${r.nama_kapal_parengge || r.nama_pemilik || ''}_${r.jumlah_gabus || r.jumlah || 0}_${r.satuan || ''}_${r.ongkir_rp || r.ongkir || 0}`
   ).join("|");
 
   return `${(pelayaran || []).length}#${(rincian || []).length}#${pList}#${rList}`;
@@ -400,6 +473,16 @@ async function cekDataBaruSilent() {
     if (data.status === "sukses") {
       const dataBaruPelayaran = data.pelayaran || [];
       const dataBaruRincian = data.rincian || [];
+
+      if (Array.isArray(data.master_kapal_ongkir) && data.master_kapal_ongkir.length > 0) {
+        MASTER_KAPAL_ONGKIR = data.master_kapal_ongkir;
+        try { localStorage.setItem("CACHE_MASTER_ONGKIR", JSON.stringify(MASTER_KAPAL_ONGKIR)); } catch (_) {}
+      }
+      if (Array.isArray(data.master_kapal_parengge) && data.master_kapal_parengge.length > 0) {
+        MASTER_KAPAL_PARENGGE = data.master_kapal_parengge;
+        try { localStorage.setItem("CACHE_MASTER_PARENGGE", JSON.stringify(MASTER_KAPAL_PARENGGE)); } catch (_) {}
+      }
+
       normalizeDatasetTripIds(dataBaruPelayaran, dataBaruRincian);
       const newSignature = computeDataSignature(dataBaruPelayaran, dataBaruRincian);
 

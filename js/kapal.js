@@ -57,10 +57,12 @@ function filterData() {
   const todayStr = new Date().toISOString().split("T")[0];
 
   filteredPelayaran = allPelayaran.filter(p => {
+    const nKapal = (p.nama_kapal_ongkir || p.nama_kapal || "").toLowerCase();
     const matchSearch = !q || 
-      (p.nama_kapal || "").toLowerCase().includes(q) ||
+      nKapal.includes(q) ||
       (p.juragan || "").toLowerCase().includes(q) ||
       (p.lokasi_muat || "").toLowerCase().includes(q) ||
+      (p.waktu_berangkat || "").toLowerCase().includes(q) ||
       (p.tanggal || "").toLowerCase().includes(q);
 
     let matchPill = true;
@@ -68,11 +70,9 @@ function filterData() {
       matchPill = (p.tanggal === todayStr);
     } else if (currentFilterPill === 'KALMAS') {
       const lok = (p.lokasi_muat || "").toLowerCase();
-      const nKapal = (p.nama_kapal || "").toLowerCase();
       matchPill = lok.includes('kalmas') || lok.includes('ddc') || lok.includes('ddl') || nKapal.includes('kalmas');
     } else if (currentFilterPill === 'PUMA') {
       const lok = (p.lokasi_muat || "").toLowerCase();
-      const nKapal = (p.nama_kapal || "").toLowerCase();
       matchPill = lok.includes('puma') || nKapal.includes('puma');
     }
 
@@ -100,12 +100,15 @@ function renderDaftarKapal() {
     const isOk = p.status_selisih === "SESUAI";
     const badgeClass = isOk ? "badge-status-ok" : "badge-status-warn";
     const badgeLabel = isOk ? "SESUAI ✓" : "SELISIH ⚠️";
-    const safeNama = escapeHtml(p.nama_kapal);
+    const safeNama = escapeHtml(p.nama_kapal_ongkir || p.nama_kapal);
     const safeTanggal = validateDateFormat(p.tanggal) ? escapeHtml(normalizeDateKey(p.tanggal)) : escapeHtml(p.tanggal || "-");
     const safeJuragan = escapeHtml(p.juragan || "-");
     const safeLokasi = escapeHtml(p.lokasi_muat || "DDL");
-    const tripKey = p.kunci_unik || getNormalizedTripId(p.nama_kapal, p.tanggal);
+    const safeWaktu = p.waktu_berangkat ? escapeHtml(p.waktu_berangkat) : "";
+    const tripKey = p.kunci_unik || getNormalizedTripId(p.nama_kapal_ongkir || p.nama_kapal, p.tanggal);
     const safeKunci = escapeHtml(tripKey).replace(/'/g, "\\'");
+
+    const totalTerhitung = p.total_terhitung !== undefined ? p.total_terhitung : p.total_hitung;
 
     const card = document.createElement("div");
     card.className = "card";
@@ -118,9 +121,10 @@ function renderDaftarKapal() {
         <div>📅 <b>Tanggal:</b> ${safeTanggal}</div>
         <div>👤 <b>Juragan:</b> ${safeJuragan}</div>
         <div>📍 <b>Lokasi Muat:</b> ${safeLokasi}</div>
+        ${safeWaktu ? `<div>⏰ <b>Waktu Berangkat:</b> ${safeWaktu}</div>` : ""}
       </div>
       <div class="card-footer">
-        <div class="card-total-box">📦 ${formatDots(p.total_hitung)} Gabus</div>
+        <div class="card-total-box">📦 ${formatDots(totalTerhitung)} Gabus</div>
         <button class="btn-action" onclick="bukaNota('${safeKunci}')">Buka / Cetak Nota</button>
       </div>
     `;
