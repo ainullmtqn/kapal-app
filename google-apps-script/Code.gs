@@ -107,6 +107,31 @@ function formatDateIso(val) {
 }
 
 /**
+ * Format sel jam berangkat agar tidak terserialisasi menjadi ISO 1899-12-30T...
+ */
+function formatTimeCell(val) {
+  if (val === null || val === undefined || val === '') return '-';
+  if (val instanceof Date) {
+    return Utilities.formatDate(val, TIMEZONE, 'HH.mm');
+  }
+  const str = String(val).trim();
+  if (!str || str === '-') return '-';
+  if (str.indexOf('1899-12-30') !== -1 || (str.indexOf('T') !== -1 && str.indexOf('Z') !== -1)) {
+    const dt = new Date(str);
+    if (!isNaN(dt.getTime())) {
+      return Utilities.formatDate(dt, TIMEZONE, 'HH.mm');
+    }
+  }
+  const match = str.match(/(\d{1,2})[:.](\d{2})/);
+  if (match) {
+    const h = ('0' + match[1]).slice(-2);
+    const m = match[2];
+    return h + '.' + m;
+  }
+  return str;
+}
+
+/**
  * Helper untuk mengambil sheet dan memastikan ketersediaannya
  */
 function getSpreadsheetSheets(ss) {
@@ -658,8 +683,8 @@ function doGet(e) {
             nama_kapal_ongkir: rowsRekap[i][3],
             juragan: rowsRekap[i][4],
             lokasi_muat: rowsRekap[i][5],
-            jam_berangkat: rowsRekap[i][6],
-            waktu_berangkat: rowsRekap[i][6],
+            jam_berangkat: formatTimeCell(rowsRekap[i][6]),
+            waktu_berangkat: formatTimeCell(rowsRekap[i][6]),
             total_tertulis: Number(rowsRekap[i][7]) || 0,
             total_hitung: Number(rowsRekap[i][8]) || 0,
             total_terhitung: Number(rowsRekap[i][8]) || 0,
@@ -754,7 +779,7 @@ function doGet(e) {
             nama_kapal: rowsRekap[i][3],
             juragan: rowsRekap[i][4],
             lokasi_muat: rowsRekap[i][5],
-            jam_berangkat: rowsRekap[i][6],
+            jam_berangkat: formatTimeCell(rowsRekap[i][6]),
             total_tertulis: rowsRekap[i][7],
             total_hitung: rowsRekap[i][8],
             selisih: rowsRekap[i][9],
@@ -788,8 +813,8 @@ function doGet(e) {
           nama_kapal_ongkir: rowsRekap[i][3],
           juragan: rowsRekap[i][4] || '-',
           lokasi_muat: rowsRekap[i][5] || 'DDL',
-          jam_berangkat: rowsRekap[i][6] || '-',
-          waktu_berangkat: rowsRekap[i][6] || '-',
+          jam_berangkat: formatTimeCell(rowsRekap[i][6]),
+          waktu_berangkat: formatTimeCell(rowsRekap[i][6]),
           total_tertulis: Number(rowsRekap[i][7]) || 0,
           total_hitung: Number(rowsRekap[i][8]) || 0,
           total_terhitung: Number(rowsRekap[i][8]) || 0,

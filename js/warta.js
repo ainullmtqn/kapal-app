@@ -99,7 +99,7 @@ function generateTeksWarta(pelayaranItem, muatanItems) {
   const juragan = (p.juragan || "-").trim();
   const tglWarta = formatTanggalWartaIndo(p.tanggal);
   const lokasiMuat = (p.lokasi_muat || "DDL").trim();
-  const waktu = (p.waktu_berangkat || "14.30").trim();
+  const waktu = formatWaktuBerangkat(p.waktu_berangkat);
 
   // Kategori lokasi: jika ada kata kalmas/puma, tampilkan sesuai itu
   let kategoriLokasi = "kalmas";
@@ -251,7 +251,7 @@ function renderWartaHariIni(targetDate = "") {
     const safeNama = escapeHtml(p.nama_kapal_ongkir || p.nama_kapal);
     const safeJuragan = escapeHtml(p.juragan || "-");
     const safeLokasi = escapeHtml(p.lokasi_muat || "DDL");
-    const safeWaktu = escapeHtml(p.waktu_berangkat || "14.30");
+    const safeWaktu = escapeHtml(formatWaktuBerangkat(p.waktu_berangkat));
     const tripKey = p.kunci_unik || getNormalizedTripId(p.nama_kapal_ongkir || p.nama_kapal, p.tanggal);
     const safeKunci = escapeHtml(tripKey).replace(/'/g, "\\'");
 

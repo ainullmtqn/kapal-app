@@ -120,7 +120,7 @@ function renderDaftarKapal() {
     const safeTanggal = validateDateFormat(p.tanggal) ? escapeHtml(normalizeDateKey(p.tanggal)) : escapeHtml(p.tanggal || "-");
     const safeJuragan = escapeHtml(p.juragan || "-");
     const safeLokasi = escapeHtml(p.lokasi_muat || "DDL");
-    const safeWaktu = p.waktu_berangkat ? escapeHtml(p.waktu_berangkat) : "";
+    const safeWaktu = p.waktu_berangkat ? escapeHtml(formatWaktuBerangkat(p.waktu_berangkat)) : "";
     const tripKey = p.kunci_unik || getNormalizedTripId(p.nama_kapal_ongkir || p.nama_kapal, p.tanggal);
     const safeKunci = escapeHtml(tripKey).replace(/'/g, "\\'");
 

@@ -268,6 +268,36 @@ function normalizeDateKey(tglStr) {
   return escapeHtml(str);
 }
 
+/**
+ * Memformat jam berangkat kapal menjadi standar HH.mm (misal 14.30)
+ * Mengatasi serialisasi otomatis Date Google Sheets yang diawali '1899-12-30T...'
+ */
+function formatWaktuBerangkat(val) {
+  if (val === null || val === undefined) return "14.30";
+  const str = String(val).trim();
+  if (!str || str === "-" || str === "null" || str === "undefined") return "14.30";
+
+  // 1. Jika string berisi ISO Date Google Sheets (misal 1899-12-30T07:22:48.000Z)
+  if (str.includes("1899-12-30") || (str.includes("T") && str.includes("Z"))) {
+    const dt = new Date(str);
+    if (!isNaN(dt.getTime())) {
+      const h = String(dt.getHours()).padStart(2, "0");
+      const m = String(dt.getMinutes()).padStart(2, "0");
+      return `${h}.${m}`;
+    }
+  }
+
+  // 2. Jika format waktu HH:mm atau HH.mm atau HH:mm:ss
+  const match = str.match(/(\d{1,2})[:.](\d{2})/);
+  if (match) {
+    const h = String(match[1]).padStart(2, "0");
+    const m = String(match[2]);
+    return `${h}.${m}`;
+  }
+
+  return str;
+}
+
 // ==========================================
 // IDENTIFIKASI TRIP ID & NORMALISASI
 // ==========================================
@@ -346,6 +376,9 @@ function normalizeDatasetTripIds(pelayaranList, rincianList) {
         // JANGAN timpa kunci_unik yang sudah valid dari database
         if (!p.kunci_unik || !String(p.kunci_unik).trim()) {
           p.kunci_unik = getNormalizedTripId(p.nama_kapal || p.nama_kapal_ongkir, p.tanggal);
+        }
+        if (p.waktu_berangkat) {
+          p.waktu_berangkat = formatWaktuBerangkat(p.waktu_berangkat);
         }
       }
     });
