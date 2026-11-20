@@ -1,5 +1,5 @@
 // ==========================================
-// MAIN BAR 3: MUATAN KAPAL PARENGGE (MASTER & REKAPITULASI)
+// MAIN BAR 3: MUATAN KAPAL PARENGGE (RIWAYAT PENGIRIMAN AKTUAL)
 // PARENGGEKITA - SISTEM MANIFES KAPAL
 // ==========================================
 
@@ -13,12 +13,12 @@ function initMuatanView() {
       <div class="search-card">
         <div class="section-header" style="margin-bottom: 0.5rem;">
           <div>
-            <h2 class="section-title">Kapal Parengge (<span id="countMuatan">0</span> Terdeteksi)</h2>
-            <div class="section-subtitle">Daftar master kapal parengge dan rekapitulasi muatan gabus</div>
+            <h2 class="section-title">Kapal Parengge (<span id="countMuatan">0</span> Kapal Pernah Kirim)</h2>
+            <div class="section-subtitle">Daftar kapal parengge yang tercatat memiliki riwayat pengiriman muatan gabus</div>
           </div>
         </div>
         <div class="search-input-wrap">
-          <input type="text" id="searchMuatanInput" class="search-input" placeholder="🔍 Cari nama kapal parengge / kapal ongkir..." oninput="filterParenggeTab(this.value)">
+          <input type="text" id="searchMuatanInput" class="search-input" placeholder="🔍 Cari nama kapal parengge / kapal penerima..." oninput="filterParenggeTab(this.value)">
           <button class="btn-action btn-refresh-search" onclick="tarikSemuaData()" title="Segarkan Data">
             <svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
@@ -27,9 +27,8 @@ function initMuatanView() {
           </button>
         </div>
         <div class="filter-pills-wrap" id="parenggePillsWrap">
-          <div class="pill-btn active" onclick="setPillParengge('SEMUA', this)">Semua (<span id="pillCountSemua">0</span>)</div>
-          <div class="pill-btn" onclick="setPillParengge('ADA_MUATAN', this)">Ada Muatan (<span id="pillCountAktif">0</span>)</div>
-          <div class="pill-btn" onclick="setPillParengge('KOSONG', this)">Belum Ada Muatan (<span id="pillCountKosong">0</span>)</div>
+          <div class="pill-btn active" onclick="setPillParengge('SEMUA', this)">Semua Riwayat (<span id="pillCountSemua">0</span>)</div>
+          <div class="pill-btn" onclick="setPillParengge('HARI_INI', this)">Kirim Hari Ini (<span id="pillCountHariIni">0</span>)</div>
         </div>
       </div>
 
@@ -57,44 +56,25 @@ function renderSemuaMuatan(searchQuery = "") {
   if (!container) return;
   container.innerHTML = "";
 
-  // 1. Agregasi: Inisialisasi dari Master Database Kapal Parengge
+  // 1. Agregasi: HANYA ambil kapal parengge yang sudah pernah kirim muatan dari data allRincian
   let aggregatedMap = {};
 
-  const masterList = typeof getMasterKapalParengge === "function"
-    ? getMasterKapalParengge()
-    : ((Array.isArray(MASTER_KAPAL_PARENGGE) && MASTER_KAPAL_PARENGGE.length > 0) ? MASTER_KAPAL_PARENGGE : DEFAULT_MASTER_KAPAL_PARENGGE);
-
-  masterList.forEach((namaMaster) => {
-    const raw = String(namaMaster || "").trim();
-    if (!raw) return;
-    const key = raw.toLowerCase();
-    if (!aggregatedMap[key]) {
-      aggregatedMap[key] = {
-        nama_asli: raw,
-        is_master: true,
-        total_gabus: 0,
-        riwayat_pengiriman: []
-      };
-    }
-  });
-
-  // 2. Gabungkan data riwayat muatan aktual dari allRincian
   if (Array.isArray(allRincian)) {
     allRincian.forEach((r) => {
       let rawName = String(r.nama_kapal_parengge || r.nama_pemilik || r.nama || "").trim();
-      if (!rawName) rawName = "Tanpa Nama";
+      if (!rawName || rawName.toUpperCase() === "TANPA NAMA") return;
       let key = rawName.toLowerCase();
+
+      const jml = Number(r.jumlah_gabus !== undefined ? r.jumlah_gabus : r.jumlah) || 0;
 
       if (!aggregatedMap[key]) {
         aggregatedMap[key] = {
-          nama_asli: rawName,
-          is_master: false,
+          nama_asli: rawName.toUpperCase(),
           total_gabus: 0,
           riwayat_pengiriman: []
         };
       }
 
-      const jml = Number(r.jumlah_gabus !== undefined ? r.jumlah_gabus : r.jumlah) || 0;
       aggregatedMap[key].total_gabus += jml;
       aggregatedMap[key].riwayat_pengiriman.push({
         kapal: r.nama_kapal_ongkir || r.nama_kapal || "-",
@@ -105,29 +85,33 @@ function renderSemuaMuatan(searchQuery = "") {
     });
   }
 
-  let fullList = Object.values(aggregatedMap);
+  // Hanya kapal dengan riwayat pengiriman aktual
+  let fullList = Object.values(aggregatedMap).filter(item => item.riwayat_pengiriman.length > 0);
 
-  // Update counter pills
+  // Tanggal aktif hari ini untuk filter pill
+  const todayWIB = (typeof getActiveDateWIB === "function") 
+    ? getActiveDateWIB() 
+    : new Date().toISOString().slice(0, 10);
+
   const totalCount = fullList.length;
-  const aktifCount = fullList.filter(item => item.total_gabus > 0).length;
-  const kosongCount = totalCount - aktifCount;
+  const hariIniCount = fullList.filter(item => 
+    item.riwayat_pengiriman.some(rip => String(rip.tanggal).trim() === todayWIB)
+  ).length;
 
   const elSemua = document.getElementById("pillCountSemua");
-  const elAktif = document.getElementById("pillCountAktif");
-  const elKosong = document.getElementById("pillCountKosong");
+  const elHariIni = document.getElementById("pillCountHariIni");
   if (elSemua) elSemua.textContent = totalCount;
-  if (elAktif) elAktif.textContent = aktifCount;
-  if (elKosong) elKosong.textContent = kosongCount;
+  if (elHariIni) elHariIni.textContent = hariIniCount;
 
-  // 3. Filter berdasarkan Pill
+  // 2. Filter berdasarkan Pill (Semua vs Hari Ini)
   let displayList = fullList;
-  if (currentParenggePill === 'ADA_MUATAN') {
-    displayList = displayList.filter(item => item.total_gabus > 0);
-  } else if (currentParenggePill === 'KOSONG') {
-    displayList = displayList.filter(item => item.total_gabus === 0);
+  if (currentParenggePill === 'HARI_INI') {
+    displayList = displayList.filter(item => 
+      item.riwayat_pengiriman.some(rip => String(rip.tanggal).trim() === todayWIB)
+    );
   }
 
-  // 4. Filter berdasarkan Search Input
+  // 3. Filter berdasarkan Input Pencarian
   if (searchQuery) {
     const qLower = searchQuery.toLowerCase().trim();
     displayList = displayList.filter(item => {
@@ -139,7 +123,7 @@ function renderSemuaMuatan(searchQuery = "") {
     });
   }
 
-  // 5. Urutkan: Yang ada muatan terbanyak di atas, sisanya urut nama
+  // 4. Urutkan: Total muatan gabus terbanyak di atas, kemudian urut abjad
   displayList.sort((a, b) => {
     if (b.total_gabus !== a.total_gabus) {
       return b.total_gabus - a.total_gabus;
@@ -152,46 +136,51 @@ function renderSemuaMuatan(searchQuery = "") {
     countBadge.textContent = fullList.length;
   }
 
+  // 5. Tampilan jika kosong
   if (displayList.length === 0) {
+    let emptyMsg = "Belum ada catatan kapal parengge yang pernah kirim";
+    let emptySub = "Data kapal akan muncul otomatis setelah dicatat membawa muatan gabus pada nota pelayaran.";
+    if (searchQuery) {
+      emptyMsg = `Tidak ada kapal parengge yang cocok dengan "${escapeHtml(searchQuery)}"`;
+      emptySub = "Silakan periksa kembali ejaan pencarian Anda.";
+    } else if (currentParenggePill === 'HARI_INI') {
+      emptyMsg = "Belum ada kapal parengge yang mengirim muatan hari ini";
+      emptySub = "Pilih tab 'Semua Riwayat' untuk melihat seluruh riwayat kapal yang pernah kirim.";
+    }
+
     container.innerHTML = `
       <div class="card" style="grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-        Tidak ada data kapal parengge yang sesuai dengan filter / pencarian "${escapeHtml(searchQuery)}".
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🐟</div>
+        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+          ${emptyMsg}
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+          ${emptySub}
+        </div>
       </div>
     `;
     return;
   }
 
+  // 6. Render kartu untuk setiap kapal yang pernah kirim
   displayList.forEach((item) => {
     const card = document.createElement("div");
     card.className = "parengge-card";
 
-    const hasCargo = item.total_gabus > 0;
-    const badgeStyle = hasCargo 
-      ? "" 
-      : "background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;";
-    const badgeText = hasCargo 
-      ? `📦 ${formatDots(item.total_gabus)} G` 
-      : "0 Gabus (Siap Muat)";
-
-    let historyContent = "";
-    if (hasCargo && item.riwayat_pengiriman.length > 0) {
-      historyContent = item.riwayat_pengiriman.map(rip => 
-        `<div>• Kapal: <b>${escapeHtml(rip.kapal)}</b> (${escapeHtml(rip.tanggal)}) — <b>${rip.jumlah} Gabus</b></div>`
-      ).join("");
-    } else {
-      historyContent = `<div style="font-size: 0.76rem; color: var(--text-muted); font-style: italic;">Belum ada catatan pelayaran kedatangan muatan.</div>`;
-    }
+    let historyContent = item.riwayat_pengiriman.map(rip => 
+      `<div>• Kapal: <b>${escapeHtml(rip.kapal)}</b> (${escapeHtml(rip.tanggal)}) — <b>${rip.jumlah} Gabus</b></div>`
+    ).join("");
 
     card.innerHTML = `
       <div class="parengge-card-header">
         <div>
           <div class="parengge-title">${escapeHtml(item.nama_asli)}</div>
           <div class="parengge-meta">
-            ${hasCargo ? `Total Pengiriman: ${item.riwayat_pengiriman.length} kali` : "Terdaftar di Master Database Kapal"}
+            Total Pengiriman: ${item.riwayat_pengiriman.length} kali
           </div>
         </div>
-        <div class="parengge-gabus-badge" style="${badgeStyle}">
-          ${badgeText}
+        <div class="parengge-gabus-badge">
+          📦 ${formatDots(item.total_gabus)} Gabus
         </div>
       </div>
       <div class="parengge-history-list">
