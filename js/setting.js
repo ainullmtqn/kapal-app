@@ -315,7 +315,6 @@ function handleFileImporCadangan(e) {
       if (typeof renderDashboard === "function") renderDashboard();
       if (typeof filterData === "function") filterData();
       if (typeof renderSemuaMuatan === "function") renderSemuaMuatan();
-      if (typeof renderAuditTab === "function") renderAuditTab();
 
       showSecurityToast(`✓ ${jmlKapal} kapal berhasil dipulihkan dari cadangan!`);
     } catch (err) {

@@ -570,7 +570,6 @@ async function eksekusiSimpanOtomatis() {
 
     if (typeof renderDashboard === "function") renderDashboard();
     if (typeof renderSemuaMuatan === "function") renderSemuaMuatan();
-    if (typeof renderAuditTab === "function") renderAuditTab();
     updateSaveIndicator("saved");
   } catch (err) {
     console.error("Gagal simpan otomatis:", err);

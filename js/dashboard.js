@@ -71,7 +71,7 @@ function initDashboardView() {
           <div class="kpi-sub" id="kpiSubParengge">Master Terdaftar →</div>
         </div>
 
-        <div class="kpi-card" onclick="switchTab('audit')" style="cursor: pointer;" title="Buka Audit & Selisih">
+        <div class="kpi-card" onclick="switchTab('kapal')" style="cursor: pointer;" title="Buka Daftar Kapal Ongkir">
           <div class="kpi-header">
             <span class="kpi-label">Status Audit</span>
             <div class="kpi-icon-box kpi-icon-audit" id="kpiAuditIconBox">
@@ -90,7 +90,7 @@ function initDashboardView() {
       </div>
 
       <!-- Alert Selisih Banner -->
-      <div class="alert-banner" id="alertBanner" style="display: none;" onclick="switchTab('audit')">
+      <div class="alert-banner" id="alertBanner" style="display: none;" onclick="switchTab('kapal')">
         <div class="alert-left">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
             <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
@@ -102,7 +102,7 @@ function initDashboardView() {
             <div class="alert-desc" id="alertDesc">Ditemukan kapal dengan perbedaan manifest fisik.</div>
           </div>
         </div>
-        <button class="btn-alert">Tinjau di Audit →</button>
+        <button class="btn-alert">Tinjau di Kapal Ongkir →</button>
       </div>
 
       <!-- GRAFIK TREN HARIAN KAPAL ONGKIR & MUATAN GABUS -->

@@ -56,17 +56,6 @@ function initNavbar() {
             </svg>
             <span>Kapal Parengge</span>
           </div>
-          <div class="nav-link" onclick="switchTab('audit', this)" id="navTabAudit">
-            <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-              <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-              <path d="M7 21h10"/>
-              <path d="M12 3v18"/>
-              <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
-            </svg>
-            <span>Audit & Selisih</span>
-            <span class="badge-count" id="navAuditBadge" style="display: none;">0</span>
-          </div>
           <div class="nav-link" onclick="switchTab('setting', this)" id="navTabSetting">
             <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"/>
@@ -148,18 +137,6 @@ function initNavbar() {
         </div>
         <span class="nav-label">Parengge</span>
       </div>
-      <div class="nav-item" onclick="switchTab('audit', this)" id="bottomTabAudit">
-        <div class="nav-icon-wrap">
-          <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-            <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-            <path d="M7 21h10"/>
-            <path d="M12 3v18"/>
-            <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
-          </svg>
-        </div>
-        <span class="nav-label">Audit</span>
-      </div>
       <div class="nav-item" onclick="switchTab('setting', this)" id="bottomTabSetting">
         <div class="nav-icon-wrap">
           <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -194,7 +171,6 @@ function switchTab(tabName, el) {
     dashboard: document.getElementById("navTabDashboard"),
     kapal: document.getElementById("navTabKapal"),
     muatan: document.getElementById("navTabMuatan"),
-    audit: document.getElementById("navTabAudit"),
     setting: document.getElementById("navTabSetting")
   };
   if (desktopNavMap[tabName]) {
@@ -208,7 +184,6 @@ function switchTab(tabName, el) {
     dashboard: document.getElementById("bottomTabDashboard"),
     kapal: document.getElementById("bottomTabKapal"),
     muatan: document.getElementById("bottomTabMuatan"),
-    audit: document.getElementById("bottomTabAudit"),
     setting: document.getElementById("bottomTabSetting")
   };
   if (mobileNavMap[tabName]) {
@@ -220,14 +195,12 @@ function switchTab(tabName, el) {
   const tabDashboard = document.getElementById("tabDashboard");
   const tabKapal = document.getElementById("tabKapal");
   const tabMuatan = document.getElementById("tabMuatan");
-  const tabAudit = document.getElementById("tabAudit");
   const tabSetting = document.getElementById("tabSetting");
 
   if (tabWarta) tabWarta.style.display = "none";
   if (tabDashboard) tabDashboard.style.display = "none";
   if (tabKapal) tabKapal.style.display = "none";
   if (tabMuatan) tabMuatan.style.display = "none";
-  if (tabAudit) tabAudit.style.display = "none";
   if (tabSetting) tabSetting.style.display = "none";
 
   if (tabName === 'warta') {
@@ -247,9 +220,6 @@ function switchTab(tabName, el) {
   } else if (tabName === 'muatan') {
     if (tabMuatan) tabMuatan.style.display = "block";
     if (typeof renderSemuaMuatan === "function") renderSemuaMuatan();
-  } else if (tabName === 'audit') {
-    if (tabAudit) tabAudit.style.display = "block";
-    if (typeof renderAuditTab === "function") renderAuditTab();
   } else if (tabName === 'setting') {
     if (tabSetting) tabSetting.style.display = "block";
   }
@@ -268,7 +238,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (typeof initDashboardView === "function") initDashboardView();
   if (typeof initKapalView === "function") initKapalView();
   if (typeof initMuatanView === "function") initMuatanView();
-  if (typeof initAuditView === "function") initAuditView();
   if (typeof initSettingView === "function") initSettingView();
   if (typeof initNotaModalView === "function") initNotaModalView();
 
@@ -308,7 +277,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof renderDashboard === "function") renderDashboard();
         if (typeof filterData === "function") filterData();
         if (typeof renderSemuaMuatan === "function") renderSemuaMuatan();
-        if (typeof renderAuditTab === "function") renderAuditTab();
       }
     }
   } catch (err) {
@@ -319,7 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const initialHash = (window.location.hash || "").replace("#", "").toLowerCase();
   if (initialHash === "admin" || initialHash === "dashboard") {
     switchTab('dashboard');
-  } else if (["kapal", "muatan", "audit", "setting"].includes(initialHash)) {
+  } else if (["kapal", "muatan", "setting"].includes(initialHash)) {
     switchTab(initialHash);
   } else {
     switchTab('warta');
@@ -332,7 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
       switchTab('dashboard');
     } else if (hash === "warta") {
       switchTab('warta');
-    } else if (["kapal", "muatan", "audit", "setting"].includes(hash)) {
+    } else if (["kapal", "muatan", "setting"].includes(hash)) {
       switchTab(hash);
     }
   });

@@ -9,7 +9,7 @@ var allRincian = [];
 var filteredPelayaran = [];
 var currentFilterPill = 'SEMUA';
 var currentDashChip = 'SEMUA';
-var currentTab = 'warta'; // 'warta' | 'dashboard' | 'kapal' | 'muatan' | 'audit' | 'setting'
+var currentTab = 'warta'; // 'warta' | 'dashboard' | 'kapal' | 'muatan' | 'setting'
 var activeKapal = null;
 var notaItems = [];
 var potonganNominal = 0;
@@ -485,7 +485,6 @@ async function tarikSemuaData() {
       if (typeof renderDashboard === "function") renderDashboard();
       if (typeof filterData === "function") filterData();
       if (typeof renderSemuaMuatan === "function") renderSemuaMuatan();
-      if (typeof renderAuditTab === "function") renderAuditTab();
       showSecurityToast(`✓ Data terbaru disinkronkan (${allPelayaran.length} kapal).`);
     } else {
       updateStatusBadge("offline", "Kendala DB");
@@ -574,7 +573,6 @@ async function cekDataBaruSilent() {
       if (typeof renderDashboard === "function") renderDashboard();
       if (currentTab === 'kapal' && typeof filterData === "function") filterData();
       if (currentTab === 'muatan' && typeof renderSemuaMuatan === "function") renderSemuaMuatan();
-      if (currentTab === 'audit' && typeof renderAuditTab === "function") renderAuditTab();
 
       if (allPelayaran.length > totalKapalSebelumnya) {
         showSecurityToast(`🚢 Data baru terdeteksi dari Spreadsheet! Total: ${allPelayaran.length} kapal.`);
