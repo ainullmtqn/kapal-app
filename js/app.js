@@ -155,7 +155,17 @@ function initNavbar() {
 // ==========================================
 
 function switchTab(tabName, el) {
+  if (tabName === 'admin') tabName = 'dashboard';
   currentTab = tabName;
+
+  // Simpan posisi tab aktif agar saat refresh (F5/Reload) tetap berada di halaman yang sama
+  try {
+    sessionStorage.setItem("LAST_ACTIVE_TAB", tabName);
+    localStorage.setItem("LAST_ACTIVE_TAB", tabName);
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, "", "#" + tabName);
+    }
+  } catch (_) {}
 
   // Mode Warta Publik Bersih: Sembunyikan Main Bar Top Navbar & Bottom Nav
   if (tabName === 'warta') {
@@ -277,15 +287,19 @@ document.addEventListener("DOMContentLoaded", () => {
     console.warn("Gagal membaca cache lokal:", err);
   }
 
-  // Buka Warta Hari Ini secara default atau cek Hash URL (#admin, #dashboard)
-  const initialHash = (window.location.hash || "").replace("#", "").toLowerCase();
-  if (initialHash === "admin" || initialHash === "dashboard") {
-    switchTab('dashboard');
-  } else if (["kapal", "muatan", "setting"].includes(initialHash)) {
-    switchTab(initialHash);
-  } else {
-    switchTab('warta');
+  // Tentukan tab aktif saat buka / refresh: periksa Hash URL (#kapal, #muatan) atau memori sesi tab terakhir
+  const rawHash = (window.location.hash || "").replace("#", "").toLowerCase();
+  const savedTab = (sessionStorage.getItem("LAST_ACTIVE_TAB") || localStorage.getItem("LAST_ACTIVE_TAB") || "").toLowerCase();
+  const validTabs = ["warta", "dashboard", "admin", "kapal", "muatan", "setting"];
+
+  let initialTab = "warta";
+  if (validTabs.includes(rawHash)) {
+    initialTab = (rawHash === "admin") ? "dashboard" : rawHash;
+  } else if (validTabs.includes(savedTab)) {
+    initialTab = (savedTab === "admin") ? "dashboard" : savedTab;
   }
+
+  switchTab(initialTab);
 
   // Listener Perubahan Hash URL
   window.addEventListener("hashchange", () => {
