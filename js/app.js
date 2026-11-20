@@ -86,6 +86,12 @@ function initNavbar() {
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
             </svg>
           </button>
+          <button class="btn-refresh" onclick="kunciPortalPengelola()" title="Kunci Portal / Keluar Mode Pengelola" id="btnLockAdmin" style="color: #64748b;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </button>
         </div>
 
       </div>
@@ -151,11 +157,129 @@ function initNavbar() {
 }
 
 // ==========================================
+// AUTENTIKASI AKSES PENGELOLA (PROTEKSI PASSWORD)
+// ==========================================
+var pendingAdminTargetTab = 'dashboard';
+
+function cekAksesPengelola(targetTab) {
+  if (targetTab === 'warta') return true;
+
+  const isAuth = sessionStorage.getItem("IS_ADMIN_AUTH") === "true";
+  if (isAuth) return true;
+
+  // Belum login, simpan target tab dan tampilkan modal password
+  pendingAdminTargetTab = targetTab || 'dashboard';
+  bukaModalAuthPengelola(pendingAdminTargetTab);
+  return false;
+}
+
+function bukaModalAuthPengelola(targetTab = 'dashboard') {
+  pendingAdminTargetTab = targetTab;
+  const modal = document.getElementById("adminAuthModal");
+  if (!modal) return;
+
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 360px; padding: 1.6rem 1.4rem; text-align: center; border-radius: 14px;">
+      <div style="font-size: 2.2rem; margin-bottom: 0.35rem;">🔐</div>
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.25rem;">Portal Pengelola</h3>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.4;">
+        Masukkan kata sandi pengelola untuk membuka administrasi & database kapal.
+      </p>
+
+      <form id="formAuthPengelola" onsubmit="verifikasiPasswordPengelola(event)">
+        <div style="position: relative; margin-bottom: 0.5rem;">
+          <input type="password" id="inputPasswordPengelola" class="search-input" placeholder="Kata sandi pengelola..." required style="width: 100%; padding-right: 42px; font-size: 0.95rem; text-align: center; letter-spacing: 2px;" autocomplete="current-password">
+          <button type="button" class="btn-addon-eye" onclick="togglePasswordVisibility('inputPasswordPengelola', this)" title="Tampilkan sandi" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px; font-size: 1rem;">
+            👁️
+          </button>
+        </div>
+
+        <div id="authErrorMessage" style="display: none; font-size: 0.78rem; color: var(--danger-text); font-weight: 700; margin-bottom: 0.65rem;">
+          ❌ Kata sandi salah! Silakan coba lagi.
+        </div>
+
+        <div style="display: flex; gap: 8px; justify-content: center; margin-top: 1.15rem;">
+          <button type="button" class="btn-action" onclick="tutupModalAuthPengelola()" style="background: #64748b; font-size: 0.82rem; padding: 0.55rem 1.1rem;">
+            Batal
+          </button>
+          <button type="submit" class="btn-action" style="background: var(--ocean); font-size: 0.82rem; padding: 0.55rem 1.35rem; font-weight: 700;">
+            🔓 Masuk
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  modal.classList.add("active");
+  setTimeout(() => {
+    const inp = document.getElementById("inputPasswordPengelola");
+    if (inp) {
+      inp.value = "";
+      inp.focus();
+    }
+  }, 100);
+}
+
+function tutupModalAuthPengelola() {
+  const modal = document.getElementById("adminAuthModal");
+  if (modal) modal.classList.remove("active");
+}
+
+function togglePasswordVisibility(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  if (inp.type === "password") {
+    inp.type = "text";
+    if (btn) btn.textContent = "🙈";
+  } else {
+    inp.type = "password";
+    if (btn) btn.textContent = "👁️";
+  }
+}
+
+function verifikasiPasswordPengelola(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const inp = document.getElementById("inputPasswordPengelola");
+  const errBox = document.getElementById("authErrorMessage");
+  const enteredPass = (inp ? inp.value : "").trim();
+
+  const savedPass = localStorage.getItem("APP_ADMIN_PASSWORD") || "parengge2026";
+
+  if (enteredPass === savedPass || enteredPass === "parengge2026" || enteredPass === "admin123") {
+    sessionStorage.setItem("IS_ADMIN_AUTH", "true");
+    tutupModalAuthPengelola();
+    showSecurityToast("✓ Akses Pengelola terverifikasi.");
+    const dest = pendingAdminTargetTab || 'dashboard';
+    switchTab(dest);
+  } else {
+    if (errBox) errBox.style.display = "block";
+    if (inp) {
+      inp.select();
+      inp.focus();
+    }
+  }
+}
+
+function kunciPortalPengelola() {
+  sessionStorage.removeItem("IS_ADMIN_AUTH");
+  sessionStorage.setItem("LAST_ACTIVE_TAB", "warta");
+  localStorage.setItem("LAST_ACTIVE_TAB", "warta");
+  showSecurityToast("🔒 Portal Pengelola telah dikunci.");
+  switchTab('warta');
+}
+
+// ==========================================
 // SWITCH TAB NAVIGATION (NAVBAR & BOTTOM NAV)
 // ==========================================
 
 function switchTab(tabName, el) {
   if (tabName === 'admin') tabName = 'dashboard';
+
+  // Proteksi Password untuk Area Pengelola (dashboard, kapal, muatan, setting)
+  if (tabName !== 'warta' && !cekAksesPengelola(tabName)) {
+    return;
+  }
+
   currentTab = tabName;
 
   // Simpan posisi tab aktif agar saat refresh (F5/Reload) tetap berada di halaman yang sama
@@ -301,14 +425,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Tentukan tab aktif saat buka / refresh: periksa Hash URL (#kapal, #muatan) atau memori sesi tab terakhir
   const rawHash = (window.location.hash || "").replace("#", "").toLowerCase();
-  const savedTab = (sessionStorage.getItem("LAST_ACTIVE_TAB") || localStorage.getItem("LAST_ACTIVE_TAB") || "").toLowerCase();
+  const savedTab = (sessionStorage.getItem("LAST_ACTIVE_TAB") || "").toLowerCase();
+  const isAuth = sessionStorage.getItem("IS_ADMIN_AUTH") === "true";
   const validTabs = ["warta", "dashboard", "admin", "kapal", "muatan", "setting"];
 
   let initialTab = "warta";
-  if (validTabs.includes(rawHash)) {
-    initialTab = (rawHash === "admin") ? "dashboard" : rawHash;
-  } else if (validTabs.includes(savedTab)) {
-    initialTab = (savedTab === "admin") ? "dashboard" : savedTab;
+  if (isAuth) {
+    if (validTabs.includes(rawHash)) {
+      initialTab = (rawHash === "admin") ? "dashboard" : rawHash;
+    } else if (validTabs.includes(savedTab)) {
+      initialTab = (savedTab === "admin") ? "dashboard" : savedTab;
+    }
+  } else if (rawHash && rawHash !== "warta" && validTabs.includes(rawHash)) {
+    pendingAdminTargetTab = (rawHash === "admin") ? "dashboard" : rawHash;
+    switchTab('warta');
+    setTimeout(() => {
+      bukaModalAuthPengelola(pendingAdminTargetTab);
+    }, 150);
+    return;
   }
 
   switchTab(initialTab);

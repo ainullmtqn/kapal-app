@@ -72,6 +72,27 @@ function initSettingView() {
           <!-- Diisi via renderMasterKapalList() -->
         </div>
 
+        <!-- Keamanan & Kata Sandi Pengelola -->
+        <div style="border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 1.75rem;">
+          <div style="font-size: 0.84rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+            🔐 Kata Sandi Akses Pengelola
+          </div>
+          <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.45;">
+            Ubah kata sandi yang digunakan saat masuk ke portal administrasi & database kapal (Kata sandi bawaan: <code>parengge2026</code>).
+          </p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; max-width: 440px; margin-bottom: 0.75rem;">
+            <input type="password" id="inputNewAdminPassword" class="search-input" placeholder="Ketik kata sandi baru..." style="flex: 1; min-width: 200px; font-size: 0.82rem;">
+            <button type="button" class="btn-action" onclick="simpanPasswordPengelolaBaru()" style="background: var(--ocean); font-size: 0.78rem; padding: 0.55rem 1rem;">
+              💾 Simpan Sandi
+            </button>
+          </div>
+          <div>
+            <button type="button" class="btn-action" onclick="kunciPortalPengelola()" style="background: #e2e8f0; color: var(--text-primary); font-size: 0.75rem; padding: 0.4rem 0.85rem;">
+              🔒 Kunci Portal Sekarang
+            </button>
+          </div>
+        </div>
+
         <!-- Pengelolaan Cache Lokal -->
         <div style="border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 1.75rem;">
           <div style="font-size: 0.84rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">💾 Cache Penyimpanan Perangkat</div>
@@ -109,6 +130,19 @@ function bersihkanCache() {
     showSecurityToast("✓ Cache lokal berhasil dibersihkan.");
     setTimeout(() => location.reload(), 500);
   }
+}
+
+function simpanPasswordPengelolaBaru() {
+  const inp = document.getElementById("inputNewAdminPassword");
+  const val = (inp ? inp.value : "").trim();
+  if (!val || val.length < 4) {
+    alert("Kata sandi baru minimal 4 karakter.");
+    return;
+  }
+  localStorage.setItem("APP_ADMIN_PASSWORD", val);
+  if (inp) inp.value = "";
+  showSecurityToast("✓ Kata sandi pengelola berhasil diperbarui!");
+  alert("✓ Kata sandi pengelola berhasil diubah!");
 }
 
 // ==============================================================
