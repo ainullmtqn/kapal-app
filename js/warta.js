@@ -273,8 +273,6 @@ function renderWartaHariIni(targetDate = "") {
           <div class="warta-ship-title">${safeNama}</div>
           <div class="warta-ship-meta">
             <span>👤 Jrg <b>${safeJuragan}</b></span>
-            <span>•</span>
-            <span>📅 <b>${formatTanggalWartaIndo(p.tanggal)}</b></span>
           </div>
         </div>
       </div>
@@ -290,20 +288,11 @@ function renderWartaHariIni(targetDate = "") {
         <pre class="warta-pre-content" id="preWarta_${idx}">${escapeHtml(teksBroadcast)}</pre>
       </div>
 
-      <!-- KAKI KARTU DENGAN TOTAL & AKSI -->
+      <!-- KAKI KARTU DENGAN AKSI WHATSAPP -->
       <div class="warta-card-footer">
-        <div class="warta-footer-stat">
-          <div class="warta-total-label">Total Muatan Fisik</div>
-          <div class="warta-total-val">📦 ${formatDots(totalGabusFisik)} Gabus</div>
-        </div>
-        <div class="warta-action-group">
-          <button type="button" class="btn-action btn-warta-wa" onclick="bagikanKeWhatsApp('${safeKunci}')" title="Bagikan langsung ke WhatsApp">
-            <span>📲 Kirim ke WhatsApp</span>
-          </button>
-          <button type="button" class="btn-action" onclick="bukaNota('${safeKunci}')" style="background: #0f172a;" title="Buka dan Cetak Nota Kontan A6">
-            <span>🧾 Buka / Cetak Nota</span>
-          </button>
-        </div>
+        <button type="button" class="btn-action btn-warta-wa btn-warta-card-main" onclick="bagikanKeWhatsApp('${safeKunci}')" title="Bagikan langsung ke WhatsApp">
+          <span>📲 Kirim ke WhatsApp</span>
+        </button>
       </div>
     `;
 

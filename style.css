@@ -2926,38 +2926,23 @@ body.warta-public-mode .main-wrapper {
 
 .warta-card-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: stretch;
   align-items: center;
   padding-top: 0.85rem;
   border-top: 1px dashed var(--border);
-  gap: 0.75rem;
-  flex-wrap: wrap;
   margin-top: auto;
 }
 
-.warta-footer-stat {
-  display: flex;
-  flex-direction: column;
-}
-
-.warta-total-label {
-  font-size: 0.7rem;
+.btn-warta-card-main {
+  width: 100%;
+  justify-content: center;
+  padding: 0.62rem 1rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
-
-.warta-total-val {
-  font-size: 1.05rem;
-  font-weight: 900;
-  color: var(--primary);
-}
-
-.warta-action-group {
-  display: flex;
+  border-radius: 8px;
+  display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .btn-warta-wa {
@@ -3030,17 +3015,6 @@ body.warta-public-mode .main-wrapper {
   }
   .btn-copy-all-warta {
     width: 100%;
-    justify-content: center;
-  }
-  .warta-card-footer {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .warta-action-group {
-    width: 100%;
-  }
-  .warta-action-group .btn-action {
-    flex: 1;
     justify-content: center;
   }
 }
