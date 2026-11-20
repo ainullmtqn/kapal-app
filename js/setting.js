@@ -31,40 +31,23 @@ function initSettingView() {
           </button>
         </div>
 
-        <!-- Toolbar Pencarian & Tambah Kapal Baru -->
+        <!-- Toolbar Pencarian & Tambah/Simpan Kapal Baru -->
         <div class="master-toolbar-grid">
           <div class="master-search-row">
             <input type="text" id="searchMasterInput" class="master-input" placeholder="🔍 Cari nama kapal di daftar master..." oninput="filterMasterKapal(this.value)">
           </div>
           <div class="master-add-row">
-            <input type="text" id="inputTambahMasterKapal" class="master-input" placeholder="Nama Kapal Ongkir baru (cth: KMN SAMUDRA JAYA)..." onkeydown="if(event.key==='Enter') tambahMasterKapal();">
-            <button type="button" class="btn-master-add" onclick="tambahMasterKapal()">
-              <span>➕ Tambah</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Bar Aksi Sync & Simpan ke Google Sheets -->
-        <div class="master-actions-bar">
-          <div class="master-actions-group">
-            <button type="button" class="btn-master-action primary" id="btnSimpanMasterSheets" onclick="simpanMasterKeSheets()" title="Simpan daftar nama kapal terbaru ke tab Database_Kapal di Spreadsheet">
-              <span>☁️ Simpan ke Google Sheets</span>
-            </button>
-            <button type="button" class="btn-master-action" id="btnSyncMasterSheets" onclick="sinkronkanMasterDariSheets()" title="Ambil daftar nama kapal terbaru dari tab Database_Kapal di Spreadsheet">
-              <span>🔄 Tarik dari Sheets</span>
-            </button>
-          </div>
-          <div>
-            <button type="button" class="btn-master-action" onclick="resetMasterKeStandar()" title="Kembalikan daftar kapal ke daftar bawaan standar">
-              <span>↺ Standar</span>
+            <input type="text" id="inputTambahMasterKapal" class="master-input" placeholder="Nama Kapal Ongkir baru (cth: KMN SAMUDRA JAYA)..." onkeydown="if(event.key==='Enter') tambahDanSimpanMasterKapal();">
+            <button type="button" class="btn-master-add" id="btnSimpanMasterSheets" onclick="tambahDanSimpanMasterKapal()" title="Simpan ke database master kapal">
+              <span>💾 Simpan</span>
             </button>
           </div>
         </div>
 
         <!-- Peringatan Perubahan Belum Disimpan -->
-        <div class="master-unsaved-alert" id="masterUnsavedAlert">
+        <div class="master-unsaved-alert" id="masterUnsavedAlert" style="display: none;">
           <span>⚠️</span>
-          <span>Terdapat perubahan lokal yang belum disimpan ke Google Sheets. Klik <strong>"Simpan ke Google Sheets"</strong> agar data online sinkron!</span>
+          <span>Terdapat perubahan yang belum tersimpan ke Google Sheets. Klik <strong>"Simpan"</strong> di atas agar data online sinkron!</span>
         </div>
 
         <!-- Container Daftar Nama Kapal -->
@@ -293,31 +276,32 @@ function renderMasterKapalList() {
   }
 }
 
-function tambahMasterKapal() {
+async function tambahDanSimpanMasterKapal() {
   const input = document.getElementById('inputTambahMasterKapal');
-  if (!input) return;
-  const rawVal = input.value.trim().toUpperCase();
-  if (!rawVal) {
-    showSecurityToast('⚠️ Masukkan nama kapal terlebih dahulu!');
-    input.focus();
-    return;
+  const rawVal = input ? input.value.trim().toUpperCase() : '';
+
+  if (rawVal) {
+    const arr = getActiveMasterArray();
+    // Validasi duplikat
+    const exists = arr.some(k => k.trim().toUpperCase() === rawVal);
+    if (exists) {
+      alert(`Kapal "${rawVal}" sudah ada dalam daftar Master ${currentMasterTab === 'ongkir' ? 'Kapal Ongkir' : 'Kapal Parengge'}!`);
+      input.focus();
+      return;
+    }
+
+    arr.push(rawVal);
+    saveActiveMasterArray(arr);
+    input.value = '';
+    renderMasterKapalList();
   }
 
-  const arr = getActiveMasterArray();
-  // Validasi duplikat
-  const exists = arr.some(k => k.trim().toUpperCase() === rawVal);
-  if (exists) {
-    alert(`Kapal "${rawVal}" sudah ada dalam daftar Master ${currentMasterTab === 'ongkir' ? 'Kapal Ongkir' : 'Kapal Parengge'}!`);
-    input.focus();
-    return;
-  }
+  // Simpan perubahan ke Google Sheets secara langsung
+  await simpanMasterKeSheets(true);
+}
 
-  arr.push(rawVal);
-  saveActiveMasterArray(arr);
-  hasUnsavedMasterChanges = true;
-  input.value = '';
-  renderMasterKapalList();
-  showSecurityToast(`✓ Kapal "${rawVal}" berhasil ditambahkan ke daftar master.`);
+function tambahMasterKapal() {
+  return tambahDanSimpanMasterKapal();
 }
 
 function bukaEditMasterKapal(index) {
@@ -351,10 +335,10 @@ function simpanEditMasterKapal(index) {
   const namaLama = arr[index];
   arr[index] = valBaru;
   saveActiveMasterArray(arr);
-  hasUnsavedMasterChanges = true;
   masterEditingIndex = -1;
   renderMasterKapalList();
   showSecurityToast(`✓ Kapal "${namaLama}" diperbarui menjadi "${valBaru}".`);
+  simpanMasterKeSheets(true);
 }
 
 function hapusMasterKapal(index) {
@@ -369,35 +353,24 @@ function hapusMasterKapal(index) {
 
   arr.splice(index, 1);
   saveActiveMasterArray(arr);
-  hasUnsavedMasterChanges = true;
   if (masterEditingIndex === index) masterEditingIndex = -1;
   renderMasterKapalList();
   showSecurityToast(`✓ Kapal "${namaTarget}" berhasil dihapus.`);
+  simpanMasterKeSheets(true);
 }
 
-async function simpanMasterKeSheets() {
+async function simpanMasterKeSheets(silent = false) {
   const url = (typeof getActiveWebhookUrl === "function") ? getActiveWebhookUrl() : (typeof getDefaultWebhookUrl === 'function' ? getDefaultWebhookUrl() : '');
   if (!url) {
-    alert('URL Webhook Google Apps Script belum diatur! Masukkan URL webhook di bagian atas terlebih dahulu.');
+    if (!silent) alert('Koneksi sistem belum siap.');
     return;
   }
-
-  const totalOngkir = Array.isArray(MASTER_KAPAL_ONGKIR) ? MASTER_KAPAL_ONGKIR.length : 0;
-  const totalParengge = Array.isArray(MASTER_KAPAL_PARENGGE) ? MASTER_KAPAL_PARENGGE.length : 0;
-
-  const konfirmasi = confirm(
-    `Simpan Perubahan Master Kapal ke Google Sheets?\n\n` +
-    `• Master Kapal Ongkir: ${totalOngkir} kapal\n` +
-    `• Master Kapal Parengge: ${totalParengge} kapal\n\n` +
-    `Data tab Database_Kapal di Spreadsheet akan diperbarui secara otomatis. Lanjutkan?`
-  );
-  if (!konfirmasi) return;
 
   const btnSimpan = document.getElementById('btnSimpanMasterSheets');
   const oldText = btnSimpan ? btnSimpan.innerHTML : '';
   if (btnSimpan) {
     btnSimpan.disabled = true;
-    btnSimpan.innerHTML = `<span>⏳ Menyimpan ke Sheets...</span>`;
+    btnSimpan.innerHTML = `<span>⏳ Menyimpan...</span>`;
   }
 
   try {
@@ -418,18 +391,21 @@ async function simpanMasterKeSheets() {
     if (result.status === 'sukses') {
       hasUnsavedMasterChanges = false;
       renderMasterKapalList();
-      showSecurityToast(`✓ Master kapal berhasil disimpan ke Google Sheets!`);
-      alert(`✓ Berhasil disimpan ke Google Sheets!\n\nTab "Database_Kapal" kini diperbarui:\n• ${result.total_ongkir || totalOngkir} Kapal Ongkir\n• ${result.total_parengge || totalParengge} Kapal Parengge`);
+      showSecurityToast(`✓ Master kapal berhasil disimpan!`);
     } else {
       throw new Error(result.pesan || 'Respon server tidak sukses');
     }
   } catch (err) {
-    console.error('Gagal menyimpan master kapal ke Google Sheets:', err);
-    alert('Gagal menyimpan ke Google Sheets: ' + err.message + '\n\nPastikan script Google Apps Script terbaru sudah di-deploy.');
+    console.error('Gagal menyimpan master kapal:', err);
+    if (!silent) {
+      alert('Gagal menyimpan master kapal: ' + err.message);
+    } else {
+      showSecurityToast('⚠️ Tersimpan di perangkat (koneksi lambat).');
+    }
   } finally {
     if (btnSimpan) {
       btnSimpan.disabled = false;
-      btnSimpan.innerHTML = oldText;
+      btnSimpan.innerHTML = oldText || `<span>💾 Simpan</span>`;
     }
   }
 }
