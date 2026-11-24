@@ -112,8 +112,11 @@ function bersihkanCache() {
     localStorage.removeItem("CACHE_MASTER_ONGKIR");
     localStorage.removeItem("CACHE_MASTER_PARENGGE");
     localStorage.removeItem("GAS_WEBHOOK_URL");
-    showSecurityToast("✓ Cache lokal berhasil dibersihkan.");
-    setTimeout(() => location.reload(), 500);
+    showSecurityToast("✓ Cache lokal berhasil dibersihkan. Memuat ulang sistem...");
+    setTimeout(() => {
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.location.replace(cleanUrl + '?refresh=' + Date.now());
+    }, 400);
   }
 }
 
