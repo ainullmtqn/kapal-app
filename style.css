@@ -2712,7 +2712,10 @@ table.items-table tfoot tr {
   .tab-pane,
   .kpi-grid,
   .alert-banner,
-  .chart-section-card {
+  .chart-section-card,
+  #adminAuthModal,
+  #tambahPelayaranModal,
+  .modal-overlay:not(#notaModal) {
     display: none !important;
   }
 
@@ -2764,7 +2767,14 @@ table.items-table tfoot tr {
     font-weight: bold !important;
   }
 
-  .modal-overlay {
+  /* Hanya tampilkan lembar nota saat mencetak, sembunyikan semua modal lain */
+  #adminAuthModal,
+  #tambahPelayaranModal,
+  .modal-overlay:not(#notaModal) {
+    display: none !important;
+  }
+
+  #notaModal.modal-overlay {
     display: block !important;
     position: static !important;
     background: none !important;
@@ -2773,7 +2783,7 @@ table.items-table tfoot tr {
     width: 100% !important;
   }
 
-  .modal-content {
+  #notaModal .modal-content {
     max-width: 100% !important;
     box-shadow: none !important;
     margin: 0 !important;

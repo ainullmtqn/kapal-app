@@ -202,7 +202,10 @@ function bukaModalAuthPengelola(targetTab = 'dashboard') {
 
 function tutupModalAuthPengelola() {
   const modal = document.getElementById("adminAuthModal");
-  if (modal) modal.classList.remove("active");
+  if (modal) {
+    modal.classList.remove("active");
+    modal.innerHTML = "";
+  }
 }
 
 function togglePasswordVisibility(inputId, btn) {
